@@ -143,12 +143,12 @@ Step 2 — Select test:
 - If non-normal (any condition fails normality): **Wilcoxon signed-rank test** (non-parametric equivalent)
 
 Step 3 — Apply test:
-- Compare Condition M vs. Condition R → H0 test (target: p > 0.05, i.e., no significant difference)
-- Compare Condition S vs. Condition R → **Control test** (expect: p < 0.05, i.e., significant difference confirming standard simulation is inferior)
+- Compare Condition M vs. Condition R → **TOST (Two One-Sided Tests)** for equivalence — see §3.4.
+- Compare Condition S vs. Condition R → **Standard NHST** (paired t-test or Wilcoxon): expect p < 0.05, confirming standard simulation is significantly inferior.
 
 ### 3.2 Significance Level
 
-$\alpha =$ **0.05** (two-tailed)
+$\alpha =$ **0.05** (two-tailed for NHST; each one-sided test of TOST at $\alpha = 0.05$)
 
 ### 3.3 Effect Size
 
@@ -156,14 +156,33 @@ Report effect size alongside p-value:
 - For parametric (t-test): Cohen's d
 - For non-parametric (Wilcoxon): **rank-biserial correlation r**
 
-### 3.4 Success Criterion (H0 primary)
+### 3.4 Equivalence Testing for H0 (TOST)
 
-| Condition | Expected result | Interpretation |
-|-----------|----------------|----------------|
-| Metrological sim vs. Real | p > 0.05, small effect size | Metrological model statistically indistinguishable from hardware ✓ |
-| Standard sim vs. Real | p < 0.05, medium/large effect size | Standard model significantly inferior — validates the need for metrological approach ✓ |
+**Why not p > 0.05?** A non-significant result (p > 0.05) does **not** demonstrate equivalence. "Absence of evidence is not evidence of absence." With limited sample size (n = 9), failure to reject the null may simply indicate insufficient statistical power to detect a real difference. Metrology-oriented journals (e.g. IEEE TIM, *Measurement*) expect equivalence to be demonstrated explicitly, not inferred from non-significance [Schuirmann, 1987; Lakens, 2017].
 
-If H0 is rejected (metrological sim significantly differs from real hardware), this is also a publishable result — it means that even empirically derived noise parameters are insufficient, which would have important implications for the field and would provide strong motivation for Phase II.
+**TOST procedure:** The Two One-Sided Tests procedure [Schuirmann, 1987] tests whether the mean difference $\mu_M - \mu_R$ lies within a pre-specified equivalence margin $[-\delta, +\delta]$. Equivalence is declared if **both** one-sided tests reject:
+- $H_{01}$: $\mu_M - \mu_R \leq -\delta$ (test that difference is not below $-\delta$)
+- $H_{02}$: $\mu_M - \mu_R \geq +\delta$ (test that difference is not above $+\delta$)
+
+Equivalently: construct a 90% confidence interval for $\mu_M - \mu_R$; if it lies entirely within $[-\delta, +\delta]$, equivalence is declared.
+
+**Equivalence margin $\delta$:** Pre-specified before data collection. Recommended options (to be fixed in the experimental protocol):
+- **Option A:** $\delta = 5$ mm ATE RMSE (absolute margin; conservative for sub-centimetre trajectories).
+- **Option B:** $\delta = 10\%$ of the reference ATE from Real hardware on the same (session, trajectory) — e.g. $\delta = 0.1 \times \mathrm{ATE}_{\mathrm{Real}}^{\mathrm{T3}}$ for the most demanding trajectory.
+- **Option C:** $\delta = \max(5\,\mathrm{mm},\, 0.1 \times \mathrm{ATE}_{\mathrm{Real}})$ — whichever is larger.
+
+The chosen margin and rationale must be documented in the pre-registration or methods section.
+
+**Success criterion (H0):**
+
+| Condition | Test | Expected result | Interpretation |
+|-----------|------|-----------------|----------------|
+| Metrological sim vs. Real | TOST with margin $\delta$ | 90% CI for $\mu_M - \mu_R$ within $[-\delta, +\delta]$ | Metrological model **equivalent** to hardware within margin ✓ |
+| Standard sim vs. Real | NHST (t-test / Wilcoxon) | p < 0.05, medium/large effect | Standard model significantly inferior — validates need for metrological approach ✓ |
+
+**If TOST fails (equivalence not declared):** This is a publishable result — it indicates that even empirically derived noise parameters are insufficient to match real hardware within the chosen margin, which has important implications for the field and motivates Phase II.
+
+**References:** Schuirmann (1987) [RESEARCH_PLAN Ref. 31]; Lakens (2017) [RESEARCH_PLAN Ref. 32].
 
 ### 3.5 Multiple Comparisons
 
@@ -171,7 +190,9 @@ With 4 sessions × 3 trajectories = 12 primary comparisons, apply Bonferroni cor
 
 $\alpha_{\mathrm{corrected}} = 0.05 / 12 \approx 0.004$
 
-Report both uncorrected and Bonferroni-corrected p-values. The primary conclusion should be based on corrected values; uncorrected values are reported for reference and comparison with other works.
+- **For the control test (S vs. R):** Report both uncorrected and Bonferroni-corrected p-values. The primary conclusion should be based on corrected values.
+- **For TOST (M vs. R):** Each equivalence test uses a 90% CI. For family-wise control across 12 TOST comparisons, use a $(1 - 0.10/12) \approx 99.2\%$ CI per comparison, or apply Holm–Bonferroni to the two one-sided p-values. The chosen procedure must be pre-specified in the analysis plan.
+- Uncorrected values are reported for reference and comparison with other works.
 
 ---
 

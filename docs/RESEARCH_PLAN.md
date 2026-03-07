@@ -62,7 +62,7 @@ The IEEE standard for IMU noise characterization (e.g. IEEE Std 647) defines All
 
 Furrer et al. (2016) established the simulation standard for inertial sensors in the RotorS framework, demonstrating that ARW and Bias Instability must be derived empirically from hardware logs — not assumed from datasheets — to produce drift predictions that match real flight data.
 
-The **Six-Position Test (IEEE Std 1293)** [14] complements Allan Variance by isolating scale factor errors and gravitational bias — parameters that are not observable from static horizontal logs but are critical for tight-coupling in FAST-LIO2 and GLIM.
+The **Six-Position Test (IEEE Std 1293)** [14] complements Allan Variance by isolating scale factor errors and gravitational bias — parameters that are not observable from static horizontal logs but are critical for tight-coupling in FAST-LIO2 [22] and GLIM [23].
 
 ### 3.2 LiDAR Characterization
 
@@ -104,11 +104,11 @@ The M4 model rests on established foundations: (i) **Allan Variance** (IEEE stan
 ## 4. Research Hypothesis
 
 Primary hypothesis (H0):
-> A simulation plugin that injects empirically derived Allan Variance coefficients (ARW, Bias Instability, RRW) and enforces the correct Livox Rosetta scanning topology will produce sensor output — and resulting SLAM trajectory estimates — that are statistically indistinguishable from real hardware, as measured by ATE and RPE against the YuMi kinematic reference.
+> A simulation plugin that injects empirically derived Allan Variance coefficients (ARW, Bias Instability, RRW) and enforces the correct Livox Rosetta scanning topology will produce sensor output — and resulting SLAM trajectory estimates — that are statistically equivalent to real hardware within a pre-specified margin $\delta$, as measured by ATE and RPE against the YuMi kinematic reference.
 
-Formal test: paired t-test or Wilcoxon signed-rank test (selected based on normality assessment), significance level $\alpha = 0.05$.
+Formal test: **TOST (Two One-Sided Tests)** for equivalence [Schuirmann, 1987; Lakens, 2017 — see References 31–32]. The margin $\delta$ (e.g. 5 mm ATE or 10% of reference ATE) is pre-specified before data collection. Equivalence is declared if the 90% confidence interval for the mean difference (Metrological sim − Real) lies entirely within $[-\delta, +\delta]$.
 
-Success criterion: The ATE distribution of the metrological simulation does not differ significantly from the real hardware ATE distribution (p > 0.05), while the standard simulation ATE distribution does differ significantly (p < 0.05).
+Success criterion: (i) **Equivalence:** TOST declares Metrological sim equivalent to Real within margin $\delta$. (ii) **Control:** Standard simulation differs significantly from Real (p < 0.05 via paired t-test or Wilcoxon), confirming that the metrological approach is necessary. If equivalence is not declared, this is also publishable — it indicates that even empirically derived parameters are insufficient.
 
 Secondary hypothesis (H1):
 > The quality of the IMU (ARW, Bias Instability) has a measurable and systematic effect on tight-coupling SLAM performance (ATE/RPE), quantifiable across three IMUs of different quality grades under identical dynamic conditions.
@@ -153,7 +153,7 @@ IMU quality ranking (reference for H1 analysis):
 - **ROS 2 Humble** — middleware and data logging
 - **RobotStudio** — trajectory programming and ground truth export
 - **Python / imu_utils / kalibr** — Allan Variance computation and calibration
-- **evo** — trajectory evaluation (ATE, RPE) with Umeyama alignment
+- **evo** [29] — trajectory evaluation (ATE, RPE) with Umeyama alignment
 - **Gazebo Fortress** — simulation environment (standard and metrological plugins)
 
 ---
@@ -179,7 +179,7 @@ Upon completion, Phase I will produce the following verifiable outputs:
 ### 6.3 Comparative Evaluation
 
 - Three-condition dataset: real hardware / standard Gazebo simulation / metrological Gazebo plugin
-- ATE and RPE computed with `evo` (Umeyama alignment) for all conditions and trajectory types
+- ATE and RPE computed with `evo` [29] (Umeyama alignment) for all conditions and trajectory types
 - Statistical test results (paired t-test or Wilcoxon, $\alpha = 0.05$) with explicit statement of the test, normality assessment, and effect size
 - CW/CCW asymmetry analysis per sensor (secondary H2)
 
@@ -188,8 +188,8 @@ Upon completion, Phase I will produce the following verifiable outputs:
 - **Gazebo plugin for non-repetitive scan patterns:** One of the expected contributions is a Gazebo plugin that models **non-repetitive scanning topology** (Livox Mid-360 Rosetta pattern, and optionally Mid-70) so that simulation can reproduce the temporal integration and point-cloud statistics of solid-state Livox sensors. This complements the existing IMU/LiDAR noise injection and is required for a faithful comparison in Session D.
 - Metrological Gazebo plugin: custom IMU noise injection (ARW + BI + RRW) and Livox Rosetta scanning topology emulation, extended with state-dependent variance as a function of time since power-on and kinematic state (velocity, acceleration, jerk).
 - Allan Variance processing scripts (compatible with `imu_utils` and `kalibr`)
-- `evo`-based comparison pipeline with reproducible configuration
-- SLAM evaluation matrix across multiple backends (GLIM, FAST-LIO2, ORB-SLAM3, Cartographer, KISS-ICP, Point-LIO, OpenVINS; optional RTAB-Map) under four noise model configurations (manufacturer, static Allan, in-session static, kinematic-residual with explicit thermal dependence) and three SLAM parameter regimes (low/nominal/high).
+- `evo` [29]-based comparison pipeline with reproducible configuration
+- SLAM evaluation matrix across multiple backends (GLIM [23], FAST-LIO2 [22], ORB-SLAM3 [24], Cartographer [25], KISS-ICP [26], Point-LIO [27], OpenVINS [28]; optional RTAB-Map [30]) under four noise model configurations (manufacturer, static Allan, in-session static, kinematic-residual with explicit thermal dependence) and three SLAM parameter regimes (low/nominal/high).
 
 ---
 
@@ -197,11 +197,11 @@ Upon completion, Phase I will produce the following verifiable outputs:
 
 Phase I is not a benchmark of SLAM algorithms per se, but SLAM backends are required as \"measuring instruments\" to evaluate sensor model fidelity. To avoid conclusions that depend on a single estimator, multiple backends are used per modality:
 
-- Cross-modal baseline: GLIM (factor-graph, GPU-accelerated, tight-coupled LiDAR+IMU and visual-inertial).
-- LiDAR 3D (Mid-360): FAST-LIO2 (IESKF, LiDAR+IMU), Point-LIO (dense point-based), GLIM.
-- LiDAR 2D (RPLiDAR): Cartographer 2D (graph-based SLAM), KISS-ICP 2D (odometry), GLIM in planar 3D mode where feasible.
-- Visual / Visual-inertial (RealSense D455): ORB-SLAM3 (feature-based VIO), GLIM (visual-inertial), OpenVINS (EKF-based VIO). R3LIVE is excluded (camera+LiDAR fusion; Session B is RGB-D+IMU only).
-- **Loose-coupled baseline (optional):** RTAB-Map (2D, 3D LiDAR, RGB-D) in a reduced subset of experiments to contrast tight vs. loose coupling.
+- Cross-modal baseline: GLIM [23] (factor-graph, GPU-accelerated, tight-coupled LiDAR+IMU and visual-inertial).
+- LiDAR 3D (Mid-360): FAST-LIO2 [22] (IESKF, LiDAR+IMU), Point-LIO [27] (dense point-based), GLIM [23].
+- LiDAR 2D (RPLiDAR): Cartographer 2D [25] (graph-based SLAM), KISS-ICP 2D [26] (odometry), GLIM [23] in planar 3D mode where feasible.
+- Visual / Visual-inertial (RealSense D455): ORB-SLAM3 [24] (feature-based VIO), GLIM [23] (visual-inertial), OpenVINS [28] (EKF-based VIO). R3LIVE is excluded (camera+LiDAR fusion; Session B is RGB-D+IMU only).
+- **Loose-coupled baseline (optional):** RTAB-Map [30] (2D, 3D LiDAR, RGB-D) in a reduced subset of experiments to contrast tight vs. loose coupling.
 
 Noise injected in simulation follows four configurations (see `SLAM_BACKENDS.md`): M1 (manufacturer), M2 (static Allan), M3 (in-session static Allan), M4 (kinematic-residual). For each SLAM backend, a nominal configuration is tuned once on real YuMi data and then frozen; low/high sensitivity variants (scaled covariances) are used for robustness checks.
 
@@ -262,3 +262,29 @@ The experimental design and software architecture in this plan were originally i
 [20] Intel Corporation, "IMU Calibration Tool for Intel RealSense Depth Cameras (D435i, D455, L515)," Whitepaper rev. 1.4, July 2020. [PDF](https://www.realsenseai.com/wp-content/uploads/2020/07/IMU_Calibration_Tool_for_Intel_RealSense-Depth_Cameras_Whitepaper.pdf) *(Official procedure for D455 IMU calibration; supports §2.1 and static characterisation.)*
 
 [21] "Procedure and Accuracy Assessment Results of Livox MID-360 Scanners," *ISPRS Arch. Photogramm. Remote Sens. Spatial Inf. Sci.*, Vol. XLVIII-1/W6-2025, 2025. [https://doi.org/10.5194/isprs-archives-XLVIII-1-W6-2025-147-2025](https://isprs-archives.copernicus.org/articles/XLVIII-1-W6-2025/147/2025/) *(Direct accuracy assessment of Mid-360; supports sensor choice and HARDWARE_PAYLOAD.)*
+
+**SLAM backends and evaluation tools:**
+
+[22] W. Xu, Y. Cai, D. He, J. Lin, and F. Zhang, "FAST-LIO2: Fast Direct LiDAR-Inertial Odometry," *IEEE Transactions on Robotics*, vol. 38, no. 4, pp. 2053–2073, 2022. [DOI: 10.1109/TRO.2022.3141876](https://ieeexplore.ieee.org/document/9697912)
+
+[23] K. Koide, M. Yokozuka, S. Oishi, and A. Banno, "Globally Consistent and Tightly Coupled 3D LiDAR Inertial Mapping," in *Proc. IEEE International Conference on Robotics and Automation (ICRA)*, Philadelphia, 2022, pp. 5622–5628. [arXiv: 2202.00242](https://arxiv.org/abs/2202.00242)
+
+[24] C. Campos, R. Elvira, J. J. Gómez Rodríguez, J. M. M. Montiel, and J. D. Tardós, "ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual-Inertial and Multi-Map SLAM," *IEEE Transactions on Robotics*, vol. 37, no. 6, pp. 1874–1890, 2021. [DOI: 10.1109/TRO.2021.3075644](https://ieeexplore.ieee.org/document/9440682)
+
+[25] W. Hess, D. Kohler, H. Rapp, and D. Andor, "Real-Time Loop Closure in 2D LIDAR SLAM," in *Proc. IEEE International Conference on Robotics and Automation (ICRA)*, Stockholm, 2016, pp. 1271–1278. [DOI: 10.1109/ICRA.2016.7487258](https://ieeexplore.ieee.org/document/7487258)
+
+[26] I. Vizzo, T. Guadagnino, B. Mersch, L. Wiesmann, J. Behley, and C. Stachniss, "KISS-ICP: In Defense of Point-to-Point ICP – Simple, Accurate, and Robust Registration If Done the Right Way," *IEEE Robotics and Automation Letters*, vol. 8, no. 2, pp. 1029–1036, 2023. [arXiv: 2209.15397](https://arxiv.org/abs/2209.15397)
+
+[27] D. He, W. Xu, N. Chen, F. Kong, C. Yuan, and F. Zhang, "Point-LIO: Robust High-Bandwidth LiDAR-Inertial Odometry," *Advanced Intelligent Systems*, vol. 5, no. 7, 2023. [DOI: 10.1002/aisy.202200459](https://doi.org/10.1002/aisy.202200459)
+
+[28] P. Geneva, K. Eckenhoff, W. Lee, Y. Yang, and G. Huang, "OpenVINS: A Research Platform for Visual-Inertial Estimation," in *Proc. IEEE International Conference on Robotics and Automation (ICRA)*, Paris, 2020. [https://github.com/rpng/open_vins](https://github.com/rpng/open_vins)
+
+[29] M. Grupp, "evo: Python package for the evaluation of odometry and SLAM," 2017. [https://github.com/MichaelGrupp/evo](https://github.com/MichaelGrupp/evo)
+
+[30] M. Labbé and F. Michaud, "RTAB-Map as an Open-Source Lidar and Visual SLAM Library for Large-Scale and Long-Term Online Operation," *Journal of Field Robotics*, vol. 36, no. 3, pp. 416–446, 2018. [DOI: 10.1002/rob.21831](https://doi.org/10.1002/rob.21831)
+
+**Equivalence testing (TOST):**
+
+[31] D. J. Schuirmann, "A comparison of the Two One-Sided Tests Procedure and the Power Approach for assessing the equivalence of average bioavailability," *Journal of Pharmacokinetics and Biopharmaceutics*, vol. 15, no. 6, pp. 657–680, 1987. [DOI: 10.1007/BF01068419](https://doi.org/10.1007/BF01068419) *(Foundational TOST procedure; standard in bioequivalence and adopted for measurement equivalence.)*
+
+[32] D. Lakens, "Equivalence Tests: A Practical Primer for t Tests, Correlations, and Meta-Analyses," *Social Psychological and Personality Science*, vol. 8, no. 4, pp. 355–362, 2017. [DOI: 10.1177/1948550617697177](https://doi.org/10.1177/1948550617697177) *(Practical primer on equivalence testing; explains why p > 0.05 does not demonstrate equivalence.)*
