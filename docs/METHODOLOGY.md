@@ -243,9 +243,11 @@ Residuals are analysed in segments corresponding to different kinematic regimes 
 
 This segmentation makes it possible to quantify how noise statistics change with motion intensity.
 
-### 5.3 Dynamic Noise Model (M4) with Thermal Component
+### 5.3 Dynamic Noise Model (M4) — Goal and Thermal Component
 
-Let $t_{\mathrm{on}}(t)$ denote the time elapsed since sensor power-on (or since the beginning of the log). The static Allan-based variance is extended to depend on $t_{\mathrm{on}}$ to capture thermal warm-up effects:
+Goal: Obtain an explicit variance formula $\sigma^2(t) = f\bigl(t_{\mathrm{on}}(t), \|v\|, \|\omega\|, \|a\|, \|\dot{\omega}\|, \|\dot{a}\|\bigr)$ with identifiable coefficients, fitted from residuals against YuMi ground truth. The aim is to demonstrate empirically which formulation fits the data — not to deduce the correct form a priori. Several candidate formulas are proposed below; the experimental study will validate or discard each.
+
+Thermal component (from literature): Let $t_{\mathrm{on}}(t)$ denote time since sensor power-on. The static variance is extended to capture thermal warm-up:
 
 $$
 \sigma^2_{\mathrm{static}}(t_{\mathrm{on}}) =
@@ -253,31 +255,49 @@ $$
 \bigl(\sigma^2_{\mathrm{cold}} - \sigma^2_{\infty}\bigr) e^{-t_{\mathrm{on}}/\tau_T},
 $$
 
-where $\sigma^2_{\mathrm{cold}}$ is the variance at cold start (estimated from early D_static windows), $\sigma^2_{\infty}$ is the variance in thermal steady state (estimated from S0 windows), and $\tau_T$ is an effective thermal time constant fitted from the data. This form is applied separately to IMU coefficients (e.g., ARW, BI) and to LiDAR/camera range or pose noise as appropriate.
+where $\sigma^2_{\mathrm{cold}}$ is variance at cold start (early D_static windows), $\sigma^2_{\infty}$ is variance in thermal steady state (S0 windows), and $\tau_T$ is the thermal time constant. *Known limitation:* temperature also depends on ambient conditions; only $t_{\mathrm{on}}$ is modelled here.
 
-The full state-dependent variance used for M4 then becomes:
+<a id="54-candidate-formulas-for-the-kinematic-term-to-validate-empirically"></a>
 
-$$
-\sigma^2(t) =
-\sigma^2_{\mathrm{static}}\bigl(t_{\mathrm{on}}(t)\bigr) +
- c_v \|\omega_{\mathrm{true}}(t)\| +
- c_a \|a_{\mathrm{true}}(t)\| +
- c_j \|\dot{a}_{\mathrm{true}}(t)\|,
-$$
+### 5.4 Candidate Formulas for the Kinematic Term (to validate empirically)
 
-where $c_v, c_a, c_j$ are fitted from the residuals $R_a(t), R_\omega(t)$ over S1–S3.
+The full M4 variance combines $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ with a kinematic term. The kinematic state includes: linear velocity $\|v\|$, angular velocity $\|\omega\|$, linear acceleration $\|a\|$, angular acceleration $\|\dot{\omega}\|$, and jerk $\|\dot{a}\|$. The following candidates are proposed for experimental validation. Coefficients are fitted from residuals $R_a(t), R_\omega(t)$ over S1–S3; the study will determine which formulations generalise to T3 (held-out) and improve ATE/RPE vs. M1–M3.
 
-This model is then used in the Gazebo plugins so that the injected sensor noise scales with both the current thermal state and the current kinematic state of the sensor, rather than remaining constant in time.
+| # | Formulation | Formula | Notes |
+|---|-------------|---------|-------|
+| 1 | **Additive linear** | $\sigma^2 = \sigma^2_{\mathrm{static}} + c_v \|v\| + c_\omega \|\omega\| + c_a \|a\| + c_{\dot{\omega}} \|\dot{\omega}\| + c_j \|\dot{a}\|$ | Requires explicit units per coefficient; risk of $\sigma^2 < 0$ if coefficients are negative. |
+| 2 | **Multiplicative** | $\sigma^2 = \sigma^2_{\mathrm{static}} \cdot \max\bigl(1 + c_v \|v\| + c_\omega \|\omega\| + c_a \|a\| + c_{\dot{\omega}} \|\dot{\omega}\| + c_j \|\dot{a}\|,\; \epsilon\bigr)$ | Guarantees $\sigma^2 > 0$; all $c \geq 0$; dimensionless scaling. |
+| 3 | **Single term (g-sensitivity)** | $\sigma^2 = \sigma^2_{\mathrm{static}} \cdot \bigl(1 + c_\omega \|\omega\|\bigr)$ | One parameter; better identifiability; ignores $v$, $a$, $\dot{\omega}$, $\dot{a}$. |
+| 4 | **Conservative scaling** | $\sigma^2 = \sigma^2_{\mathrm{static}} \cdot k_{\mathrm{dyn}}$, $k_{\mathrm{dyn}} \geq 1$ | Single factor during dynamic phases; supported by practice (e.g. Kalibr: static params underestimate low-cost IMU uncertainty). |
 
-### 5.4 Sensor-Specific Instantiation
+The chosen formulation(s) will be reported in the manuscript; candidates that fail to generalise or improve metrics will be discarded and the limitation stated.
 
-- **IMU:** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ models the evolution of ARW/BI with warm-up; $c_v, c_a, c_j$ capture increased noise under rotation, acceleration and jerk (g-sensitivity and structural vibration).
-- **LiDAR:** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ and a time-varying range bias model drift in Time-of-Flight; coefficients $c_v, c_a$ capture increased spread of point-to-plane residuals under high rotational speed and acceleration.
-- **Camera (RGB-D):** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ approximates thermal drift of intrinsics and depth noise; $c_v$ captures effective degradation due to motion blur, modeled as increased pose/depth variance with angular speed.
+<a id="541-sensor-specific-coefficient-pruning"></a>
 
-### 5.5 M4 Generalization Check (held-out trajectory)
+#### 5.4.1 Sensor-specific coefficient pruning
 
-To demonstrate that M4 does not overfit to the specific trajectories used for fitting, coefficients $c_v, c_a, c_j$ (and thermal parameters) are fitted using only T1 (smooth) and T2 (moderate) data. The model is then evaluated on T3 (aggressive) as a held-out set. If M4 improves ATE/RPE on T3 relative to M1–M3, the model generalizes beyond the fitting regime. This protocol is reported explicitly; if generalization fails, the limitation is stated in the manuscript.
+Not all kinematic terms are physically relevant for every sensor. Coefficients are fixed to zero when the underlying mechanism does not apply, reducing parameters and improving identifiability. The following pruning is applied by default:
+
+| Sensor | Coefficient fixed to 0 | Rationale |
+|--------|-------------------------|-----------|
+| **IMU** | $c_v$ (linear velocity) | The IMU measures acceleration and angular rate, not velocity. Velocity is an integrated quantity; it does not directly affect IMU noise. G-sensitivity and vibration depend on $a$, $\omega$, $\dot{a}$, $\dot{\omega}$ — not on $v$. |
+| **IMU** | $c_{\dot{\omega}}$ (optional) | Angular acceleration may be correlated with jerk in many trajectories; if identifiability is poor, $c_{\dot{\omega}} = 0$ can be tried. |
+| **LiDAR** | — | All terms potentially relevant: $\|v\|$ and $\|\omega\|$ for motion blur during scan; $\|a\|$, $\|\dot{\omega}\|$, $\|\dot{a}\|$ for structural vibration. Pruning only if data show non-identifiability. |
+| **Camera (RGB-D)** | $c_{\dot{\omega}}$, $c_j$ (optional) | Motion blur is dominated by $\|v\|$ and $\|\omega\|$. Acceleration and jerk have weaker direct effect; can be pruned if not identifiable. |
+
+IMU default: $c_v = 0$ always. The remaining terms $c_\omega, c_a, c_{\dot{\omega}}, c_j$ are fitted; $c_{\dot{\omega}}$ may be set to 0 if VIF or condition number indicate collinearity with $c_j$.
+
+LiDAR / Camera: Start with the full set; prune only after checking identifiability (VIF, condition number) or if a coefficient is not significant in the residual fit.
+
+### 5.5 Sensor-Specific Instantiation
+
+- **IMU:** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ models the evolution of ARW/BI with warm-up; the kinematic term (per chosen candidate) captures increased noise under rotation, acceleration and jerk (g-sensitivity and structural vibration).
+- **LiDAR:** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ and a time-varying range bias model drift in Time-of-Flight; kinematic coefficients capture increased spread of point-to-plane residuals under high rotational speed and acceleration.
+- **Camera (RGB-D):** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ approximates thermal drift of intrinsics and depth noise; angular-velocity term captures effective degradation due to motion blur.
+
+### 5.6 M4 Generalization Check (held-out trajectory)
+
+To demonstrate that M4 does not overfit to the specific trajectories used for fitting, kinematic coefficients (and thermal parameters) are fitted using only T1 (smooth) and T2 (moderate) data. The model is then evaluated on T3 (aggressive) as a held-out set. If M4 improves ATE/RPE on T3 relative to M1–M3, the model generalizes beyond the fitting regime. This protocol is reported explicitly; if generalization fails, the limitation is stated in the manuscript.
 
 ---
 
@@ -305,7 +325,7 @@ Stage 3: Metrological Simulation
 Stage 4: Evaluation
   ↓ evo_ape + evo_rpe (ATE, RPE) for R, S, M against YuMi ground truth
   ↓ Statistical tests (§3)
-  ↓ CW/CCW asymmetry analysis (§5)
+  ↓ CW/CCW asymmetry analysis (§7)
 ```
 
 **Critical constraint:** The SLAM backend and its parameters must be identical across all three conditions. Any tuning of SLAM parameters is frozen after the real-hardware baseline is established — no per-condition tuning allowed, as it would confound the comparison.

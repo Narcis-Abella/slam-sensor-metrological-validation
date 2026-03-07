@@ -29,7 +29,7 @@ Four families of sensor noise models will be compared in simulation:
 | M1 | Manufacturer | Datasheet / typical values | Default noise parameters taken from vendor specifications or common practice. Baseline for \"standard simulation\". |
 | M2 | Static-Allan | Allan Variance on long static logs (10–12 h) | Coefficients ARW, BI, RRW extracted from D_static logs with the sensor immobile in controlled conditions. |
 | M3 | In-Session-Static | Allan Variance on concatenated 60 s static windows inside dynamic sessions | Same sensor and mount as in dynamic runs, but using only the 60 s pre/post segments where the YuMi is static. Captures thermal equilibrium and mounting effects. |
-| M4 | Kinematic-Residual | Residual-based dynamic model | Noise statistics derived from residuals (sensor_measured − signal_true) during motion, modeled as a function of kinematic state (velocity, acceleration, jerk). |
+| M4 | Kinematic-Residual | Residual-based dynamic model | Noise statistics derived from residuals (sensor_measured − signal_true) during motion, modeled as a function of kinematic state (linear and angular velocity, acceleration, jerk, angular acceleration). See [METHODOLOGY.md](METHODOLOGY.md#54-candidate-formulas-for-the-kinematic-term-to-validate-empirically) §5.4 for candidate formulas and sensor-specific coefficient pruning. |
 
 Each model defines the parameters injected into the metrological Gazebo plugins for IMU, LiDAR and camera. M1–M3 are scalar (time-invariant) models; M4 is explicitly **state-dependent** on both kinematic state and time since power-on.
 

@@ -30,7 +30,7 @@ What is missing — and what this study contributes — is a single, metrologica
 2. Builds state‑dependent sensor noise models whose variance changes with time since power‑on and with the sensor’s motion.
 3. Tests those models across multiple tight‑coupled SLAM backends, comparing real sensors, standard simulation and metrological simulation under the same trajectories.
 
-The core theoretical contribution is an explicit covariance formula [(model M4)](https://github.com/Narcis-Abella/slam-sensor-metrological-validation?tab=readme-ov-file#51-key-contribution-kinematic-state-dependent-covariance-model-m4) where the noise variance depends both on thermal state and on kinematic state; the formula and its intuition are kept in this README, while the full derivation and justification live in the technical documents under `docs/`.
+The core theoretical contribution is an explicit covariance formula [(model M4)](#m4-target-formula) where the noise variance depends both on thermal state and on kinematic state; the formula and its intuition are in this README, while candidate formulations and full justification live under `docs/`.
 
 ---
 
@@ -45,7 +45,7 @@ Concretely:
 - We characterise three sensor families: IMUs, LiDARs (2D mechanical and 3D solid‑state Livox Mid‑360) and an RGB‑D camera (RealSense D455).
 - We build a family of sensor noise models whose variance depends on:
   - time since power‑on (thermal state), and
-  - kinematic state of the sensor (velocity, acceleration, jerk).
+  - kinematic state of the sensor (linear and angular velocity, acceleration, jerk, angular acceleration).
 - We then compare, for multiple SLAM systems, three kinds of data:
   1. Real hardware logs on the YuMi,
   2. Standard simulation (Gazebo defaults / manufacturer specs),
@@ -122,45 +122,38 @@ The static 60 s segments inside dynamic runs are also used to characterise therm
 
 The simulator will be run under four noise model configurations (see [`docs/SLAM_BACKENDS.md`](docs/SLAM_BACKENDS.md) and [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §4–5):
 
-1. **M1 — Manufacturer:**  
-   Values from datasheets or typical community practice.
-2. **M2 — Static Allan:**  
-   Coefficients (ARW, BI, RRW) from long static logs (Stage 1).
-3. **M3 — In‑Session Static:**  
-   Allan analysis on concatenated 60 s static windows within dynamic sessions (captures warm‑up and mounting effects).
-4. **M4 — Kinematic‑Residual + Thermal:**  
+1. M1 — Manufacturer: values from datasheets or typical community practice.
+2. M2 — Static Allan: coefficients (ARW, BI, RRW) from long static logs (Stage 1).
+3. M3 — In‑Session Static: Allan analysis on concatenated 60 s static windows within dynamic sessions (captures warm‑up and mounting effects).
+4. M4 — Kinematic‑Residual + Thermal:
    - First, we reconstruct the true kinematics of the sensor from YuMi ground truth (splines + derivatives + hand‑eye).  
    - Then we compute residuals (measured − true) for IMU, LiDAR and camera.  
    - Finally, we fit a model where the noise variance depends on time since power‑on and on kinematic state:
-     - IMU: rotation, acceleration and jerk (g‑sensitivity, vibration).  
-     - LiDAR: Time‑of‑Flight drift and spread under high rotational speed / acceleration.  
-     - Camera: thermal drift of intrinsics and motion‑blur‑induced degradation.
+     - IMU: rotation, acceleration, jerk, angular acceleration (g‑sensitivity, vibration).  
+     - LiDAR: velocity, rotation, acceleration, jerk (motion blur, ToF drift, vibration).  
+     - Camera: thermal drift of intrinsics; velocity and rotation for motion blur.
 
 ### 5.1 Key contribution: kinematic-state-dependent covariance model (M4)
 
-No prior work has combined thermal decay with explicit kinematic-state dependence in a single covariance model for SLAM sensor simulation. Our M4 model expresses the variance as:
+Goal: An explicit variance formula with identifiable coefficients — fitted from residuals against YuMi ground truth — that depends on thermal state (via time since power-on) and kinematic state (linear and angular velocity, acceleration, jerk, angular acceleration). *Known limitation:* temperature also depends on ambient conditions; only time since power-on is modelled.
+
+The aim is to demonstrate empirically which formulation fits the data, not to deduce it a priori. Several candidate formulas are proposed in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md#54-candidate-formulas-for-the-kinematic-term-to-validate-empirically) §5.4; the experimental study will validate or discard each.
+
+<a id="m4-target-formula"></a>
 
 $$
-\sigma^2(t) =
-\sigma^2_{\mathrm{static}}\bigl(t_{\mathrm{on}}(t)\bigr) +
-c_v \|\omega_{\mathrm{true}}(t)\| +
-c_a \|a_{\mathrm{true}}(t)\| +
-c_j \|\dot{a}_{\mathrm{true}}(t)\|,
+\sigma^2(t) = f\bigl( t_{\mathrm{on}}(t),\, \|v(t)\|,\, \|\omega(t)\|,\, \|a(t)\|,\, \|\dot{\omega}(t)\|,\, \|\dot{a}(t)\| \bigr)
 $$
 
 where:
-- $t_{\mathrm{on}}(t)$ is time since power-on
-- $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ decays from cold start to steady state (exponential with thermal time constant $\tau_T$)
-- $c_v, c_a, c_j$ are fitted from residuals over kinematic regimes S1–S3.
+- $t_{\mathrm{on}}(t)$ is time since power-on (thermal state).
+- $\|v(t)\|$ is linear velocity magnitude.
+- $\|\omega(t)\|$ is angular velocity magnitude (rotation).
+- $\|a(t)\|$ is linear acceleration magnitude.
+- $\|\dot{\omega}(t)\|$ is angular acceleration magnitude.
+- $\|\dot{a}(t)\|$ is jerk magnitude (rate of change of linear acceleration).
 
-This captures g-sensitivity, structural vibration and motion blur as a function of
-- Angular velocity $\|\omega\|$
-- Acceleration $\|a\|$
-- Jerk $\|\dot{a}\|$
-
-Rather than assuming constant noise as in standard simulation. 
-
-The model is grounded in validated practice: static Allan Variance [\[1\]](docs/RESEARCH_PLAN.md#9-references), exponential thermal settling for inertial sensors [\[11\]](docs/RESEARCH_PLAN.md#9-references), [\[12\]](docs/RESEARCH_PLAN.md#9-references), known g-sensitivity and motion-dependent noise in MEMS [\[11\]](docs/RESEARCH_PLAN.md#9-references), residual-based identification with ground truth [\[13\]](docs/RESEARCH_PLAN.md#9-references), and robot-arm validation [\[10\]](docs/RESEARCH_PLAN.md#9-references); the novelty is the unified formula and its use for SLAM simulation. See [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md) §3.6 and References for full citations.
+The model is grounded in: static Allan Variance [\[1\]](docs/RESEARCH_PLAN.md#9-references), exponential thermal settling [\[11\]](docs/RESEARCH_PLAN.md#9-references), [\[12\]](docs/RESEARCH_PLAN.md#9-references), g-sensitivity and motion-dependent noise in MEMS [\[11\]](docs/RESEARCH_PLAN.md#9-references), residual-based identification with ground truth [\[13\]](docs/RESEARCH_PLAN.md#9-references), and robot-arm validation [\[10\]](docs/RESEARCH_PLAN.md#9-references). See [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md) §3.6 and References for full citations.
 
 ---
 
