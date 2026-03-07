@@ -30,7 +30,7 @@ What is missing — and what this study contributes — is a **single, metrologi
 2. Builds **state‑dependent sensor noise models** whose variance changes with time since power‑on and with the sensor’s motion.
 3. Tests those models across **multiple tight‑coupled SLAM backends**, comparing real sensors, standard simulation and metrological simulation under the same trajectories.
 
-The core theoretical contribution is an explicit covariance formula (model M4) where the noise variance depends both on thermal state and on kinematic state; the formula and its intuition are kept in this README, while the full derivation and justification live in the technical documents under `docs/`.
+The core theoretical contribution is an explicit covariance formula [(model M4)](https://github.com/Narcis-Abella/slam-sensor-metrological-validation?tab=readme-ov-file#51-key-contribution-kinematic-state-dependent-covariance-model-m4) where the noise variance depends both on thermal state and on kinematic state; the formula and its intuition are kept in this README, while the full derivation and justification live in the technical documents under `docs/`.
 
 ---
 
