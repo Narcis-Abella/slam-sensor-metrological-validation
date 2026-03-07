@@ -1,4 +1,4 @@
-# Phase I — Metrological Validation of Visual-LiDAR SLAM Sensors
+# Metrological Validation of Visual-LiDAR SLAM Sensors
 
 **Institution:** IQS School of Engineering (Universitat Ramon Llull), Barcelona  
 **Author:** Narcís Abella  
@@ -8,11 +8,11 @@
 
 ---
 
-## 0. Why this study matters (plain language)
+## 0. Why this study matters
 
 Robotics researchers and practitioners rely heavily on simulation to design and tune SLAM systems before moving to real hardware. In most simulators, sensors are modelled with very simple, constant Gaussian noise. On a robot that moves fast, heats up and vibrates, those assumptions are wrong — and systems that look robust in simulation can fail once they leave the lab.
 
-Phase I asks a very concrete question:
+This study asks a very concrete question:
 
 > *If we take sensor modelling as seriously as metrology does — using a calibrated robot arm as ground truth and detailed noise models — how close can simulation really get to real sensors?*
 
@@ -36,7 +36,7 @@ The core theoretical contribution is an explicit covariance formula (model M4) w
 
 ## 1. What this project is about
 
-This repository contains the design of **Phase I** of a three-part research line on Visual–LiDAR SLAM. Phase I is a **stand‑alone metrological study** whose goal is simple to state:
+This repository contains the design of a **stand‑alone metrological study** on Visual–LiDAR SLAM. Its goal is simple to state:
 
 > Quantitatively measure how close a simulator can get to real sensors if we model their noise and scanning behaviour with the same level of care used in instrumentation and metrology.
 
@@ -57,19 +57,12 @@ The detailed scientific rationale and hypotheses live in [`docs/RESEARCH_PLAN.md
 
 ---
 
-## 2. Scope and phases
+## 2. Scope and possible extensions
 
-The original proposal defined three phases:
+This study was originally conceived as the **sensor‑level step** of a broader research line on Sim‑to‑Real Visual–LiDAR SLAM (with possible extensions to a mobile‑platform Reality Gap benchmark and large‑scale SLAM optimisation in simulation).  
+In the context of this degree project, however, **only the metrological validation with YuMi ground truth is in scope**. Any mobile‑platform benchmark or automatic optimisation stage is treated strictly as **possible future work**, not as a commitment of this project.
 
-| Phase | Scope | Status |
-|-------|-------|--------|
-| **Phase I** (this repo) | Sensor‑level metrological validation with YuMi ground truth | 🟡 Design |
-| Phase II | Sim‑to‑real gap benchmark on a mobile base (AgileX Tracer) | 🔵 Future work |
-| Phase III | Large‑scale automatic SLAM optimisation in simulation | 🔵 Future work |
-
-Phase I is designed to produce a **publishable result on its own** (target journals: *Measurement* / IEEE TIM). Phases II and III only start once Phase I is closed and analysed.
-
-For a compact overview of Phase I goals and contributions, see [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md), sections 1–2 and 6.
+For a compact overview of the current study’s goals and contributions, see [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md), sections 1–2 and 6.
 
 ---
 

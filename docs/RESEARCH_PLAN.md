@@ -212,19 +212,9 @@ The goal is to show that the conclusions about sensor model fidelity — particu
 
 ---
 
-## 8. Connection to Future Phases
+## 8. Possible Future Work (outside this project)
 
-Phase I is designed to be self-contained. However, its outputs directly enable Phases II and III:
-
-**Phase II (Sim-to-Real Gap Benchmark — mobile platform):**
-- Phase I establishes sensor model fidelity. Phase II adds platform dynamics (AgileX Tracer 2.0 differential drive) and uncontrolled environment variables.
-- The validated metrological plugin from Phase I becomes the simulation baseline for Phase II.
-- GLIM is the preferred backend for Phase II, with FAST-LIO2, LIO-SAM, ORB-SLAM3, Cartographer, and RTAB-Map as comparison systems.
-
-**Phase III (Autonomous SLAM Optimization):**
-- Phase III requires a validated simulator (Phase I) and a characterized Reality Gap (Phase II) before large-scale Bayesian Optimization (Optuna / TPE, >10,000 iterations) is meaningful.
-
-Phase I will be fully closed — results published — before any work on Phase II begins. The point is not discipline for its own sake; it is that Phase II's experimental design depends on knowing what the sensor models actually get wrong, and that answer only comes from Phase I data.
+The experimental design and software architecture in this plan were originally inspired by a **broader three-phase research line** (metrological validation, mobile-platform Reality Gap benchmark, and large-scale SLAM optimisation). In the context of this degree project, however, **only the metrological validation with YuMi ground truth is in scope**. Any mobile-platform benchmark or automatic optimisation stage should be understood strictly as **potential future work** that could build on the outputs of this study — not as a commitment that will be executed within this project.
 
 ---
 
