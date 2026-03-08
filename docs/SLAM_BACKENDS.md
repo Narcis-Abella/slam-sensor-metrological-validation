@@ -22,16 +22,7 @@ GLIM is used as a **cross-modal baseline** wherever feasible, complemented by tw
 
 ## 2. Noise Model Configurations
 
-Four families of sensor noise models will be compared in simulation:
-
-| ID | Name | Source | Description |
-|----|------|--------|-------------|
-| M1 | Manufacturer | Datasheet / typical values | Default noise parameters taken from vendor specifications or common practice. Baseline for \"standard simulation\". |
-| M2 | Static-Allan | Allan Variance on long static logs (10–12 h) | Coefficients ARW, BI, RRW extracted from D_static logs with the sensor immobile in controlled conditions. |
-| M3 | In-Session-Static | Allan Variance on concatenated 60 s static windows inside dynamic sessions | Same sensor and mount as in dynamic runs, but using only the 60 s pre/post segments where the YuMi is static. Captures thermal equilibrium and mounting effects. |
-| M4 | Kinematic-Residual | Residual-based dynamic model | Noise statistics derived from residuals (sensor_measured − signal_true) during motion, modeled as a function of kinematic state (linear and angular velocity, acceleration, jerk, angular acceleration). See [METHODOLOGY.md](METHODOLOGY.md#54-candidate-formulas-for-the-kinematic-term-to-validate-empirically) §5.4 for candidate formulas and sensor-specific coefficient pruning. |
-
-Each model defines the parameters injected into the metrological Gazebo plugins for IMU, LiDAR and camera. M1–M3 are scalar (time-invariant) models; M4 is explicitly **state-dependent** on both kinematic state and time since power-on.
+Noise model definitions (M1–M4) and the kinematic regime taxonomy (S0–S3) are defined in **[METHODOLOGY.md §4 and §5](METHODOLOGY.md)**. M1–M3 are time-invariant; M4 is state-dependent on **measured temperature $T$** and kinematic state. This document only lists which SLAM backends are run per session; for formulas and coefficient pruning see METHODOLOGY.
 
 ---
 
@@ -42,17 +33,6 @@ Phase I uses three dataset families:
 - **D_static** — Long-duration static logs in laboratory conditions (IMUs, LiDARs, camera). Used for M2.
 - **D_dynamic_yumi** — Dynamic sessions A/B/C/D on the ABB YuMi with ground truth from RobotStudio. Used for all dynamic evaluations and for M3/M4 extraction.
 - **D_public (optional)** — Public datasets (e.g., KITTI, TartanAir) used only for sanity checks of the proposed noise models outside the YuMi setup.
-
-Within D_dynamic_yumi, segments are further classified by kinematic regime:
-
-| ID | Name | Definition (illustrative) | Purpose |
-|----|------|---------------------------|---------|
-| S0 | Static-in-session | $|\omega| < \epsilon_\omega$, $|a| < \epsilon_a$ for ≥ 60 s | Source for M3 (in-session static Allan). |
-| S1 | Low-velocity | small $|\omega|$, low $|a|$ (e.g., T1) | Baseline dynamic regime. |
-| S2 | Moderate-acceleration | sustained $|a|$ with moderate $|\omega|$ (e.g., T2) | Tests acceleration-induced noise. |
-| S3 | High-jerk | large $|\dot{a}|$ / step changes (e.g., T3 waypoints) | Excites vibration, g-sensitivity and motion blur. |
-
-Exact numerical thresholds $\epsilon_\omega$, $\epsilon_a$ and jerk limits will be defined during implementation.
 
 ---
 
@@ -66,44 +46,44 @@ Exact numerical thresholds $\epsilon_\omega$, $\epsilon_a$ and jerk limits will 
 
 The aim is not to benchmark INS algorithms but to quantify how IMU noise models (M1–M4) affect pure inertial drift under the T1/T2/T3 trajectories.
 
-### 4.2 2D LiDAR (Session C, RPLiDAR A2M12)
+### 4.2 2D LiDAR (Session B, RPLiDAR A2M12)
 
 | ID | Backend | Coupling | ROS2 | Justification |
 |----|---------|----------|------|---------------|
 | C1 | **Cartographer 2D** | Tight SLAM (scan + pose graph) | Yes (cartographer_ros2) | **Why:** De facto standard for 2D LiDAR; submap + pose graph gives loop closure and map consistency. Represents the **graph-based SLAM** paradigm — optimizes over submaps and loop closures. Highly sensitive to scan consistency; sensor model fidelity directly affects graph quality. |
 | C2 | **KISS-ICP 2D** | Odom only (ICP) | Yes | **Why:** Pure **incremental odometry** — no loop closure, no graph. Frame-to-frame ICP only. Maximally sensitive to scan noise and motion blur; if M4 improves consistency here, the effect is attributable to better scan modelling rather than graph optimization. Complements Cartographer (graph) and GLIM (factor graph). |
-| C3 | **GLIM (experimental)** | Tight (LiDAR) | Planned | **Why:** Cross-modal baseline; if 2D scans can be injected as planar 3D, enables **factor-graph smoothing** on the same pipeline as Session D. Optional; only if feasible without diverting effort from core sessions. |
+| C3 | **GLIM (experimental)** | Tight (LiDAR) | Planned | **Why:** Cross-modal baseline; if 2D scans can be injected as planar 3D, enables **factor-graph smoothing** on the same pipeline as Session C. Optional; only if feasible without diverting effort from core sessions. |
 
-**Paradigm coverage (2D LiDAR):** With Cartographer 2D + KISS-ICP 2D + GLIM we cover three distinct paradigms: **graph-based SLAM** (submap + pose graph), **incremental odometry** (frame-to-frame ICP), and **factor-graph smoothing** (GPU-accelerated). Conclusions about sensor model fidelity are thus not tied to a single architecture.
+**Paradigm coverage (2D LiDAR):** With Cartographer 2D + KISS-ICP 2D + GLIM we cover three distinct paradigms: **graph-based SLAM** (submap + pose graph), **incremental odometry** (frame-to-frame ICP), and **factor-graph smoothing** (GPU-accelerated), so that conclusions are not backend-specific.
 
 RTAB-Map 2D (loose-coupled) may be added as an optional baseline if time permits; **rationale:** contrast tight vs loose on the same 2D data.
 
-### 4.3 3D LiDAR Solid-State (Session D, Livox Mid-360)
+### 4.3 3D LiDAR Solid-State (Session C, Livox Mid-360)
 
 | ID | Backend | Coupling | ROS2 | Justification |
 |----|---------|----------|------|---------------|
 | D1 | **FAST-LIO2** | Tight (IESKF, LiDAR+IMU) | Yes | **Why:** Established LiDAR-inertial baseline (commonly used in LIO benchmarks). **IESKF (iterated extended Kalman filter)** — the classical **filter-based** paradigm for LIO. Native Livox (incl. Mid-360) support. Ensures conclusions hold for the dominant family of LIO algorithms in industry and research. |
 | D2 | **Point-LIO** | Tight (dense points, no features) | Yes | **Why:** **Dense point-based** — no explicit feature extraction (edges, planes). Evaluates how the Mid-360 non-repetitive (Rosetta) pattern affects registration when the algorithm relies on raw point clouds. Architecturally distinct from filter (FAST-LIO2) and factor graph (GLIM); complements both. |
-| D3 | **GLIM** | Tight (factor graph, LiDAR+IMU) | Yes | **Why:** **Factor-graph smoothing** with GPU-accelerated scan-matching factors. Native Mid-360 support. Represents the modern non-filter family; same pipeline used in Session B (visual-inertial), so sensor model conclusions are comparable across modalities. |
+| D3 | **GLIM** | Tight (factor graph, LiDAR+IMU) | Yes | **Why:** **Factor-graph smoothing** with GPU-accelerated scan-matching factors. Native Mid-360 support. Represents the modern non-filter family; same pipeline used in Session D (visual-inertial), so sensor model conclusions are comparable across modalities. |
 
-**Paradigm coverage (3D LiDAR):** With FAST-LIO2 + Point-LIO + GLIM we cover three distinct paradigms: **filter-based LIO** (IESKF), **dense point-based** (no features), and **factor-graph smoothing** (GPU). Conclusions about sensor model fidelity are thus not tied to a single architecture.
+**Paradigm coverage (3D LiDAR):** With FAST-LIO2 + Point-LIO + GLIM we cover three distinct paradigms: **filter-based LIO** (IESKF), **dense point-based** (no features), and **factor-graph smoothing** (GPU), so that conclusions are not backend-specific.
 
 LIO-SAM is **not** included in Phase I because it is optimized for **repetitive-pattern** (spinning) LiDARs; the Mid-360 has a non-repetitive Rosetta pattern and LIO-SAM has limited ROS 2 support for Livox. See **§7** for backends to consider if a 360° spinning LiDAR becomes available.
 
 RTAB-Map 3D (loose-coupled) can be used in a reduced subset of experiments to contrast tight vs. loose coupling.
 
-### 4.4 Visual / Visual-Inertial (Session B, RealSense D455)
+### 4.4 Visual / Visual-Inertial (Session D, RealSense D455)
 
 | ID | Backend | Coupling | ROS2 | Justification |
 |----|---------|----------|------|---------------|
 | B1 | **ORB-SLAM3** | Tight visual / visual-inertial | Community ports | **Why:** De facto standard feature-based RGB-D/VIO. **Keyframe bundle adjustment** — optimizes over a pose graph with keyframes and IMU preintegration. Native RGB-D support. Sensitive to motion blur and texture; good stress test for M4. Ensures results are comparable to the most cited visual SLAM. |
 | B2 | **GLIM** | Tight visual-inertial | Yes | **Why:** **Factor-graph smoothing** with GPU-accelerated visual factors. Same cross-modal baseline as Sessions C/D; allows comparing sensor model impact across visual vs LiDAR with one consistent backend. |
 | B3 | **OpenVINS** | Tight visual-inertial (EKF) | ROS/ROS2 | **Why:** **EKF-based VIO** (MSCKF-style) — recursive filter, not keyframe BA. Architecturally distinct from ORB-SLAM3 (graph) and GLIM (factor graph). Widely cited research platform; tight-coupled; ROS 2 compatible. |
-| — | **R3LIVE** | Tight visual-LiDAR-IMU | ROS/ROS2 forks | **Excluded from this study.** Ideally one would run a camera+LiDAR fusion test; however, Session B uses RGB-D+IMU only (no LiDAR on arm). R3LIVE expects simultaneous LiDAR+camera and has limited ROS 2 support for this configuration. Reserved for future extension if a multi-sensor session is added. |
+| — | **R3LIVE** | Tight visual-LiDAR-IMU | ROS/ROS2 forks | **Excluded from this study.** Ideally one would run a camera+LiDAR fusion test; however, Session D uses RGB-D+IMU only (no LiDAR on arm). R3LIVE expects simultaneous LiDAR+camera and has limited ROS 2 support for this configuration. Reserved for future extension if a multi-sensor session is added. |
 
-**Paradigm coverage (Visual / VIO):** With ORB-SLAM3 + OpenVINS + GLIM we cover three distinct paradigms: **keyframe bundle adjustment** (ORB-SLAM3), **EKF VIO** (OpenVINS), and **factor-graph smoothing** (GLIM). Conclusions about sensor model fidelity are thus not tied to a single architecture.
+**Paradigm coverage (Visual / VIO):** With ORB-SLAM3 + OpenVINS + GLIM we cover three distinct paradigms: **keyframe bundle adjustment** (ORB-SLAM3), **EKF VIO** (OpenVINS), and **factor-graph smoothing** (GLIM), so that conclusions are not backend-specific.
 
-RTAB-Map RGB-D (loose-coupled) may be run on selected trajectories; **rationale:** only loose-coupled baseline for Session B, contrasts with B1/B2/B3.
+RTAB-Map RGB-D (loose-coupled) may be run on selected trajectories; **rationale:** only loose-coupled baseline for Session D, contrasts with B1/B2/B3.
 
 ---
 
@@ -145,9 +125,9 @@ Phase I uses a **solid-state** 3D LiDAR (Livox Mid-360, non-repetitive Rosetta p
 | Backend | Type | Tight-coupled method | ROS / ROS 2 | Why consider (if 360° spinning available) |
 |---------|------|------------------------|-------------|------------------------------------------|
 | **LIO-SAM** | Tight (LiDAR+IMU) | Factor graph (keyframe + scan-to-map, IMU preintegration) | ROS 1; ROS 2 ports community | Commonly used for spinning LiDAR; scan-to-submap + loop closure. Established baseline for repetitive-pattern LIO. |
-| **FAST-LIO2** | Tight (LiDAR+IMU) | IESKF, same as current Session D | Yes | Already in Phase I for Mid-360; works equally well with spinning LiDAR. No change of backend — only sensor. |
+| **FAST-LIO2** | Tight (LiDAR+IMU) | IESKF, same as current Session C | Yes | Already in Phase I for Mid-360; works equally well with spinning LiDAR. No change of backend — only sensor. |
 | **LIO-SAM2** | Tight (LiDAR+IMU) | Evolution of LIO-SAM (e.g. ikd-tree, better efficiency) | ROS 1 / ROS 2 | Improved robustness and efficiency; good candidate if LIO-SAM is used. |
-| **Point-LIO** | Tight (dense, no features) | Dense point-based, same as Session D | Yes | Same as Phase I; applicable to spinning LiDAR. Complements feature/graph-based backends. |
+| **Point-LIO** | Tight (dense, no features) | Dense point-based, same as Session C | Yes | Same as Phase I; applicable to spinning LiDAR. Complements feature/graph-based backends. |
 | **LeGO-LOAM** | Tight (LiDAR only or + IMU in forks) | Feature-based (edge/plane) + pose graph | ROS 1 | Lightweight; feature-based rather than dense. Contrast with FAST-LIO2/Point-LIO. |
 | **GLIM** | Tight (LiDAR+IMU) | Factor graph, cross-modal | Yes | Native support for several spinning LiDARs; keeps cross-modal baseline consistent. |
 | **RTAB-Map 3D** | Loose | ICP / feature-based odom + loop closure | Yes | Same loose-coupled baseline as in Phase I; contrast tight vs loose for spinning data. |

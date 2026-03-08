@@ -40,11 +40,7 @@ The original three-phase proposal (Abella, 2026) covered: (I) metrological senso
 
 Three reasons support keeping the scope to Phase I only.
 
-First, a complete metrological validation of sensor models — with rigorous statistical testing against a sub-millimeter ground truth — is a contribution that stands on its own. Bundling it with a sim-to-real gap benchmark or a parameter optimization study would dilute the metrological result rather than strengthen it.
-
-Second, the YuMi arm is the right tool for this specific question. Controlled trajectories, known kinematics, and sub-millimeter path repeatability (0.10 mm per ISO 9283) are not replicable on a mobile base. That clean experimental setting is precisely what makes the sensor-level comparison credible.
-
-Third, Phases II and III introduce additional variables — platform dynamics, uncontrolled environments, thousands of simulation runs — that each deserve their own experimental design. They are future work, not omissions.
+A complete metrological validation of sensor models — with rigorous statistical testing against a sub-millimeter ground truth — is a contribution that stands on its own. Bundling it with a sim-to-real gap benchmark or a parameter optimization study would dilute the metrological result rather than strengthen it. **The YuMi arm** is the right tool for this specific question: controlled trajectories, known kinematics, and sub-millimeter path repeatability (0.10 mm per ISO 9283) are not replicable on a mobile base, and that clean experimental setting is what makes the sensor-level comparison credible. **Phases II and III** introduce additional variables — platform dynamics, uncontrolled environments, thousands of simulation runs — that each deserve their own experimental design; they are future work, not omissions.
 
 To be explicit about scope: this study characterizes each sensor statically (noise coefficients via Allan Variance), validates the models dynamically (against YuMi ground truth trajectories), and tests whether a metrological Gazebo plugin using those coefficients produces trajectory estimates statistically indistinguishable from real hardware. It does not evaluate loop closure, map quality, or navigation performance — those require a mobile platform and belong to the next stage.
 
@@ -54,7 +50,7 @@ To be explicit about scope: this study characterizes each sensor statically (noi
 
 ### 3.1 IMU Noise Characterization
 
-The IEEE standard for IMU noise characterization (e.g. IEEE Std 647) defines Allan Variance (or Allan Deviation, ADEV) as the primary tool for identifying stochastic noise processes in inertial sensors. The three key parameters are:
+The IEEE standard for IMU noise characterization (e.g. IEEE Std 647) defines Allan Variance (or Allan Deviation, ADEV) as the primary tool for identifying stochastic noise processes in inertial sensors. The three main parameters are:
 
 - ARW (Angle Random Walk): white noise floor of the gyroscope; identified by the slope of $-1/2$ on the log-log ADEV curve.
 - Bias Instability: minimum of the ADEV curve; the best achievable gyroscope bias stability.
@@ -97,9 +93,9 @@ Regarding dynamic ground truth for metrology, Lin et al. (2022, *Measurement*) [
 
 The M4 model rests on established foundations: (i) **Allan Variance** (IEEE standard; Furrer et al., 2016) provides the static baseline — ARW, Bias Instability, RRW — that must be taken from empirical logs rather than datasheets for faithful simulation; (ii) **thermal drift** of IMU biases and variance is well documented (Joerger et al., 2021; MDPI Sensors, 2020), and exponential settling with a time constant $\tau_T$ is a standard way to model warm-up from cold start to steady state in inertial sensors; (iii) g-sensitivity and motion-dependent noise in MEMS (vibration, acceleration, angular rate) are known to affect bias and effective variance, so expressing terms proportional to $\|v\|$, $\|\omega\|$, $\|a\|$, $\|\dot{\omega}\|$, $\|\dot{a}\|$ is a direct parametrisation (some coefficients fixed to 0 per sensor — e.g. $c_v = 0$ for IMU; see [METHODOLOGY.md](METHODOLOGY.md#541-sensor-specific-coefficient-pruning) §5.4.1); (iv) residual-based identification (measured minus true, with ground truth from a high-precision reference) is the standard approach in calibration and in data-driven covariance tuning (e.g. Cheng et al., 2025, bi-level estimator-in-the-loop). Validation using a robot arm as ground truth for orientation and trajectory has been demonstrated (Kuti et al., 2024, *Sensors*).
 
-It is important to distinguish this modeling effort from continuous-time calibration frameworks like Kalibr. Furgale et al. [37] and Rehder et al. [38] established a robust methodology to optimize spatial and temporal extrinsics alongside IMU biases using a continuous-time spline representation. While they model biases using random walks and optimize parameters against visual ground truth, they assume a constant measurement noise covariance. Our M4 model goes a step further: it aims to capture how the *variance* of the noise itself scales with the kinematic state, rather than just estimating the bias states or fixed extrinsics.
+This modeling effort **differs from** continuous-time calibration frameworks such as Kalibr. Furgale et al. [37] and Rehder et al. [38] established a robust methodology to optimize spatial and temporal extrinsics alongside IMU biases using a continuous-time spline representation. While they model biases using random walks and optimize parameters against visual ground truth, they assume a constant measurement noise covariance. Our M4 model goes a step further: it aims to capture how the *variance* of the noise itself scales with the kinematic state, rather than just estimating the bias states or fixed extrinsics.
 
-What is new is the combination: a single, explicit formula that adds a thermal term $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ and kinematic terms, with coefficients fitted from residuals under dynamic motion on a sub-millimetre repeatability manipulator (YuMi), and then used to drive SLAM sensor simulation. No prior work in the literature presents this unified, state-dependent covariance model for IMU/LiDAR/camera in the context of multi-backend SLAM evaluation.
+What is new is the combination: a single, explicit formula that adds a thermal term $\sigma^2_{\mathrm{static}}(T)$ (with $T$ measured temperature) and kinematic terms, with coefficients fitted from residuals under dynamic motion on a sub-millimetre path repeatability manipulator (YuMi), and then used to drive SLAM sensor simulation. No prior work in the literature presents this unified, state-dependent covariance model for IMU/LiDAR/camera in the context of multi-backend SLAM evaluation.
 
 ### 3.7. Summary and Novelty Statement
 
@@ -131,27 +127,29 @@ Secondary hypothesis (H2):
 ### 5.1 Ground Truth System
 
 **ABB YuMi IRC5** (dual-arm collaborative robot):
-- Pose repeatability: $\pm0.02$ mm (ISO 9283 RP)
-- Linear path repeatability: $0.10$ mm (ISO 9283 RT)
-- Linear path accuracy: $1.36$ mm (ISO 9283 AT, worst-case at 1.5 m/s)
+- Pose repeatability: $\pm0.02$ mm (ISO 9283 RP) — applies only to static points (waypoints, start/end poses).
+- Linear path repeatability: $0.10$ mm (ISO 9283 RT) — relevant for dynamic trajectory comparison.
+- Linear path accuracy: $1.36$ mm (ISO 9283 AT, worst-case at 1.5 m/s; lower at our ~0.1 m/s).
 - Payload capacity: ~500 g per arm
 - Programming: RobotStudio (offline trajectory definition and playback)
 - Reference frame: mechanical flange — requires hand-eye calibration to sensor optical/inertial center (see [METHODOLOGY.md](METHODOLOGY.md))
 
-> Important distinction: The YuMi's $\pm0.02$ mm figure is *pose repeatability*, not *path accuracy*. For dynamic trajectory comparisons (ATE), the bounding mechanical uncertainty is the path repeatability (0.10 mm) and path accuracy (bounded by 1.36 mm at maximum speed, though lower at our 0.1 m/s velocities). This must be stated explicitly in any publication.
+> For dynamic trajectory comparisons (ATE), the bounding mechanical uncertainty is path repeatability (0.10 mm) and path accuracy (up to 1.36 mm). Pose repeatability ($\pm0.02$ mm) applies only to static points. This distinction must be stated explicitly in any publication.
 
-RobotStudio provides the executed trajectory as the independent predictor of robot motion, separate from any SLAM estimate. This dual role — kinematic ground truth *and* independent simulation reference — is a key methodological strength of this setup.
+RobotStudio provides the executed trajectory as the independent predictor of robot motion, separate from any SLAM estimate. This dual role — kinematic ground truth *and* independent simulation reference — is the main methodological strength of this setup.
 
 ### 5.2 Sensor Suite
 
 See [`docs/HARDWARE_PAYLOAD.md`](HARDWARE_PAYLOAD.md) for full specification, weight breakdown, and session viability assessment.
 
+Sessions are ordered by modality complexity (A = IMU-only, B = 2D LiDAR, C = 3D LiDAR, D = visual-inertial):
+
 | ID | Sensor | IMU chip | IMU rate | LiDAR type | Session |
 |----|--------|----------|----------|------------|---------|
 | S1 | WitMotion WT901C | MPU9250 | 200 Hz | — | A |
-| S2 | Intel RealSense D455 | BMI055 | 400 Hz | — | B |
-| S3 | Livox Mid-360 | ICM40609 | 200 Hz | Solid-state, 360° | D |
-| S4 | RPLiDAR A2M12 | — | — | Mechanical 2D, 360° | C |
+| S2 | RPLiDAR A2M12 | — | — | Mechanical 2D, 360° | B |
+| S3 | Livox Mid-360 | ICM40609 | 200 Hz | Solid-state, 360° | C |
+| S4 | Intel RealSense D455 | BMI055 | 400 Hz | — | D |
 
 IMU quality ranking (reference for H1 analysis):
 1. WitMotion WT901C (MPU9250) — mid-high grade; literature-characterized chip; reference IMU of the study
@@ -195,8 +193,8 @@ Upon completion, Phase I will produce the following verifiable outputs:
 
 ### 6.4 Open-Source Software
 
-- **Gazebo plugin for non-repetitive scan patterns:** One of the expected contributions is a Gazebo plugin that models **non-repetitive scanning topology** (Livox Mid-360 Rosetta pattern, and optionally Mid-70) so that simulation can reproduce the temporal integration and point-cloud statistics of solid-state Livox sensors. This complements the existing IMU/LiDAR noise injection and is required for a faithful comparison in Session D.
-- Metrological Gazebo plugin: custom IMU noise injection (ARW + BI + RRW) and Livox Rosetta scanning topology emulation, extended with state-dependent variance as a function of time since power-on and kinematic state (velocity, acceleration, jerk).
+- **Gazebo plugin for non-repetitive scan patterns:** One of the expected contributions is a Gazebo plugin that models **non-repetitive scanning topology** (Livox Mid-360 Rosetta pattern, and optionally Mid-70) so that simulation can reproduce the temporal integration and point-cloud statistics of solid-state Livox sensors. This complements the existing IMU/LiDAR noise injection and is required for a faithful comparison in Session C.
+- Metrological Gazebo plugin: custom IMU noise injection (ARW + BI + RRW) and Livox Rosetta scanning topology emulation, extended with state-dependent variance as a function of measured temperature and kinematic state (velocity, acceleration, jerk).
 - Allan Variance processing scripts (compatible with `imu_utils` and `kalibr`)
 - `evo` [29]-based comparison pipeline with reproducible configuration
 - SLAM evaluation matrix across multiple backends (GLIM [23], FAST-LIO2 [22], ORB-SLAM3 [24], Cartographer [25], KISS-ICP [26], Point-LIO [27], OpenVINS [28]; optional RTAB-Map [30]) under four noise model configurations (manufacturer, static Allan, in-session static, kinematic-residual with explicit thermal dependence) and three SLAM parameter regimes (low/nominal/high).
@@ -210,7 +208,7 @@ Phase I is not a benchmark of SLAM algorithms per se, but SLAM backends are requ
 - Cross-modal baseline: GLIM [23] (factor-graph, GPU-accelerated, tight-coupled LiDAR+IMU and visual-inertial).
 - LiDAR 3D (Mid-360): FAST-LIO2 [22] (IESKF, LiDAR+IMU), Point-LIO [27] (dense point-based), GLIM [23].
 - LiDAR 2D (RPLiDAR): Cartographer 2D [25] (graph-based SLAM), KISS-ICP 2D [26] (odometry), GLIM [23] in planar 3D mode where feasible.
-- Visual / Visual-inertial (RealSense D455): ORB-SLAM3 [24] (feature-based VIO), GLIM [23] (visual-inertial), OpenVINS [28] (EKF-based VIO). R3LIVE is excluded (camera+LiDAR fusion; Session B is RGB-D+IMU only).
+- Visual / Visual-inertial (RealSense D455): ORB-SLAM3 [24] (feature-based VIO), GLIM [23] (visual-inertial), OpenVINS [28] (EKF-based VIO). R3LIVE is excluded (camera+LiDAR fusion; Session D is RGB-D+IMU only).
 - **Loose-coupled baseline (optional):** RTAB-Map [30] (2D, 3D LiDAR, RGB-D) in a reduced subset of experiments to contrast tight vs. loose coupling.
 
 Noise injected in simulation follows four configurations (see `SLAM_BACKENDS.md`): M1 (manufacturer), M2 (static Allan), M3 (in-session static Allan), M4 (kinematic-residual). For each SLAM backend, a nominal configuration is tuned once on real YuMi data and then frozen; low/high sensitivity variants (scaled covariances) are used for robustness checks.

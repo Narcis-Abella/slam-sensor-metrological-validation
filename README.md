@@ -3,7 +3,7 @@
 **Institution:** IQS School of Engineering (Universitat Ramon Llull), Barcelona  
 **Author:** Narcís Abella  
 **Supervisor:** Dr. Antonio Gabino Salazar Martín  
-**Status:** 🟡 Design phase — pending experimental execution  
+**Status:** Design phase — pending experimental execution  
 **Last updated:** 2026-03-06
 
 ---
@@ -27,7 +27,7 @@ Several works already cover individual pieces of this puzzle:
 
 What is missing — and what this study contributes — is a single, metrologically grounded framework that:
 1. Uses a sub‑millimetre industrial robot (ABB YuMi) as kinematic ground truth.
-2. Builds state‑dependent sensor noise models whose variance changes with time since power‑on and with the sensor’s motion.
+2. Builds state‑dependent sensor noise models whose variance changes with measured temperature and with the sensor’s motion.
 3. Tests those models across multiple tight‑coupled SLAM backends, comparing real sensors, standard simulation and metrological simulation under the same trajectories.
 
 The core theoretical contribution is an explicit covariance formula [(model M4)](#m4-target-formula) where the noise variance depends both on thermal state and on kinematic state; the formula and its intuition are in this README, while candidate formulations and full justification live under `docs/`.
@@ -41,10 +41,10 @@ This repository contains the design of a stand‑alone metrological study on Vis
 > Quantitatively measure how close a simulator can get to real sensors if we model their noise and scanning behaviour with the same level of care used in instrumentation and metrology.
 
 Concretely:
-- We use an ABB YuMi collaborative robot as kinematic ground truth (±0.02 mm repeatability) and RobotStudio as an independent trajectory predictor.
+- We use an ABB YuMi collaborative robot as kinematic ground truth (path repeatability 0.10 mm; path accuracy up to 1.36 mm; pose repeatability ±0.02 mm at static points only) and RobotStudio as an independent trajectory predictor.
 - We characterise three sensor families: IMUs, LiDARs (2D mechanical and 3D solid‑state Livox Mid‑360) and an RGB‑D camera (RealSense D455).
 - We build a family of sensor noise models whose variance depends on:
-  - time since power‑on (thermal state), and
+  - measured temperature (thermal state), and
   - kinematic state of the sensor (linear and angular velocity, acceleration, jerk, angular acceleration).
 - We then compare, for multiple SLAM systems, three kinds of data:
   1. Real hardware logs on the YuMi,
@@ -70,17 +70,17 @@ For a compact overview of the current study’s goals and contributions, see [`d
 
 Ground truth platform
 - ABB YuMi IRC5 dual‑arm cobot  
-- Repeatability: ±0.02 mm  
+- Path repeatability 0.10 mm; path accuracy up to 1.36 mm; pose repeatability ±0.02 mm at static points only.  
 - Trajectories programmed in RobotStudio and exported as time‑stamped poses.
 
-Sensors under test
+Sensors under test (sessions A–D by modality: IMU-only → 2D LiDAR → 3D LiDAR → visual‑inertial)
 
 | ID | Sensor | Type | Role |
 |----|--------|------|------|
 | S1 | WitMotion WT901C (MPU9250) | IMU, 200 Hz | Reference IMU (Session A) |
-| S2 | Intel RealSense D455 (BMI055) | RGB‑D + IMU | Visual–inertial sensor (Session B) |
-| S3 | Livox Mid‑360 (ICM40609) | 3D LiDAR + IMU | Primary 3D LiDAR (Session D) |
-| S4 | RPLiDAR A2M12 | 2D LiDAR (mechanical) | 2D SLAM baseline (Session C) |
+| S2 | RPLiDAR A2M12 | 2D LiDAR (mechanical) | 2D SLAM baseline (Session B) |
+| S3 | Livox Mid‑360 (ICM40609) | 3D LiDAR + IMU | Primary 3D LiDAR (Session C) |
+| S4 | Intel RealSense D455 (BMI055) | RGB‑D + IMU | Visual–inertial sensor (Session D) |
 
 Geometry, payload and viability details are in [`docs/HARDWARE_PAYLOAD.md`](docs/HARDWARE_PAYLOAD.md).
 
@@ -106,9 +106,9 @@ Four sessions, one per sensor configuration:
 | Session | Sensor | Motion DOF | Notes |
 |---------|--------|-----------|-------|
 | A | WitMotion WT901C | 3D | IMU‑only reference |
-| B | RealSense D455 | 3D | Visual–inertial (RGB‑D + IMU) |
-| C | RPLiDAR A2M12 | 2D (yaw only) | Planar LiDAR SLAM |
-| D | Livox Mid‑360 | 3D | 3D LiDAR‑IMU with Rosetta pattern |
+| B | RPLiDAR A2M12 | 2D (yaw only) | Planar LiDAR SLAM |
+| C | Livox Mid‑360 | 3D | 3D LiDAR‑IMU with Rosetta pattern |
+| D | RealSense D455 | 3D | Visual–inertial (RGB‑D + IMU) |
 
 Each session follows the same pattern:
 - 60 s static → Block MIX (CW/CCW/CW) → cooldown → Block CW → cooldown → Block CCW → 60 s static.
@@ -128,25 +128,25 @@ The simulator will be run under four noise model configurations (see [`docs/SLAM
 4. M4 — Kinematic‑Residual + Thermal:
    - First, we reconstruct the true kinematics of the sensor from YuMi ground truth (splines + derivatives + hand‑eye).  
    - Then we compute residuals (measured − true) for IMU, LiDAR and camera.  
-   - Finally, we fit a model where the noise variance depends on time since power‑on and on kinematic state:
+   - Finally, we fit a model where the noise variance depends on measured temperature and on kinematic state:
      - IMU: rotation, acceleration, jerk, angular acceleration (g‑sensitivity, vibration).  
      - LiDAR: velocity, rotation, acceleration, jerk (motion blur, ToF drift, vibration).  
      - Camera: thermal drift of intrinsics; velocity and rotation for motion blur.
 
-### 5.1 Key contribution: kinematic-state-dependent covariance model (M4)
+### 5.1 Main contribution: kinematic-state-dependent covariance model (M4)
 
-Goal: An explicit variance formula with identifiable coefficients — fitted from residuals against YuMi ground truth — that depends on thermal state (via time since power-on) and kinematic state (linear and angular velocity, acceleration, jerk, angular acceleration). *Known limitation:* temperature also depends on ambient conditions; only time since power-on is modelled.
+Goal: An explicit variance formula with identifiable coefficients — fitted from residuals against YuMi ground truth — that depends on thermal state (via measured temperature $T$) and kinematic state (linear and angular velocity, acceleration, jerk, angular acceleration). Temperature $T$ is logged during static and dynamic sessions (thermometer or hardware topic).
 
 The aim is to demonstrate empirically which formulation fits the data, not to deduce it a priori. Several candidate formulas are proposed in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md#54-candidate-formulas-for-the-kinematic-term-to-validate-empirically) §5.4; the experimental study will validate or discard each.
 
 <a id="m4-target-formula"></a>
 
 $$
-\sigma^2(t) = f\bigl( t_{\mathrm{on}}(t),\, \|v(t)\|,\, \|\omega(t)\|,\, \|a(t)\|,\, \|\dot{\omega}(t)\|,\, \|\dot{a}(t)\| \bigr)
+\sigma^2(t) = f\bigl( T(t),\, \|v(t)\|,\, \|\omega(t)\|,\, \|a(t)\|,\, \|\dot{\omega}(t)\|,\, \|\dot{a}(t)\| \bigr)
 $$
 
 where:
-- $t_{\mathrm{on}}(t)$ is time since power-on (thermal state).
+- $T(t)$ is measured temperature (thermal state).
 - $\|v(t)\|$ is linear velocity magnitude.
 - $\|\omega(t)\|$ is angular velocity magnitude (rotation).
 - $\|a(t)\|$ is linear acceleration magnitude.
@@ -164,7 +164,7 @@ SLAM algorithms are treated as measuring instruments: we use several per modalit
 - Cross‑modal baseline: `GLIM` (factor graph, GPU, tight‑coupled LiDAR+IMU and visual‑inertial).
 - LiDAR 3D (Mid‑360): `FAST-LIO2`, `Point-LIO`, `GLIM`.
 - LiDAR 2D (RPLiDAR): `Cartographer 2D`, `KISS-ICP 2D`, `GLIM` (planar 3D, experimental).
-- Visual / Visual–inertial (D455): `ORB-SLAM3`, `GLIM`, `OpenVINS`. (R3LIVE excluded — camera+LiDAR fusion out of scope for Session B.)
+- Visual / Visual–inertial (D455): `ORB-SLAM3`, `GLIM`, `OpenVINS`. (R3LIVE excluded — camera+LiDAR fusion out of scope for Session D.)
 - Loose‑coupled baseline (optional): `RTAB-Map` in 2D, 3D and RGB‑D to contrast tight vs. loose coupling.
 
 For each backend:
@@ -174,7 +174,7 @@ For each backend:
   - real data (YuMi), and  
   - simulations with M1–M4.
 
-Trajectories are compared against the YuMi using `evo` (ATE/RPE with Umeyama alignment). The statistical design (tests, Bonferroni correction, effect sizes) is in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §2–3.
+Trajectories are compared against the YuMi using `evo` (ATE/RPE with Umeyama alignment). The statistical design (tests, Bonferroni correction, effect sizes) is in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §2–3. Equivalence testing (TOST) is described in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §3.4.
 
 ---
 
@@ -211,7 +211,7 @@ Trajectories are compared against the YuMi using `evo` (ATE/RPE with Umeyama ali
 
 ## 9. Known limitations
 
-- Ground truth bound: YuMi repeatability (±0.02 mm) bounds the lower limit of ground truth confidence; absolute volumetric accuracy is not characterised.
+- Ground truth bound: For dynamic trajectories the floor is set by path repeatability (0.10 mm) and path accuracy (up to 1.36 mm). Pose repeatability (±0.02 mm) applies only to static points. Absolute volumetric accuracy is not characterised.
 - No spinning mechanical LiDAR: LIO-SAM and similar algorithms optimised for repetitive-pattern LiDARs are not included; extension possible if a Velodyne/Ouster becomes available.
 - Thermal model scope: Thermal models assume quasi-steady-state operation; cold-start transients &lt;5 min (typical MEMS warm-up) are not fully modelled.
 

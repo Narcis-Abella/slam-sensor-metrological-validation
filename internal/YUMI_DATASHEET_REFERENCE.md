@@ -47,7 +47,7 @@ Test conditions (from datasheet): *"At rated maximum load, maximum offset, and 1
 | Pose stabilization time | Pst | 0.37 s (within 0.1 mm) | Time to settle at target. |
 
 **Interpretation for ground truth:**
-- **RP (0.02 mm):** Relevant for point-to-point tasks. Our docs have used this as the dominant mechanical term.
+- **RP (0.02 mm):** Relevant for point-to-point and static poses only. For dynamic trajectory comparison (ATE), our docs use path repeatability (RT, 0.10 mm) and path accuracy (AT, up to 1.36 mm) as the dominant mechanical terms.
 - **AT (1.36 mm):** Relevant for **trajectory comparison** (ATE/RPE). The actual path can deviate up to 1.36 mm from the programmed path under worst-case conditions (max load, 1.5 m/s).
 - **RT (0.10 mm):** Path repeatability — consistency when repeating the same path. Lower than AT.
 

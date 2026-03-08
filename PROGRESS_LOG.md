@@ -48,8 +48,8 @@
 >
 > **Hard prereqs for YuMi booking:** weight verification, sync method defined, mounts designed, supervisor sign-off on protocol. **Can run in parallel:** static characterization (no YuMi), documentation review, FAST-LIO2 sanity check. **Planned:** YuMi dynamic sessions in June (after exams); simulation and plugin development from July onwards. Session order is at the author’s discretion.
 
-- [x] **[BLOCKER — HIGH]** Confirm Livox Mid-360 availability. *(Done — Mid-360 confirmed for Session D.)*
-- [ ] **[BLOCKER — HIGH]** Verify actual sensor + mount weights with physical scale. Session D (Mid-360) is at 70% payload margin based on estimates — must confirm before booking YuMi.
+- [x] **[BLOCKER — HIGH]** Confirm Livox Mid-360 availability. *(Done — Mid-360 confirmed for Session C.)*
+- [ ] **[BLOCKER — HIGH]** Verify actual sensor + mount weights with physical scale. Session C (Mid-360) is at 70% payload margin based on estimates — must confirm before booking YuMi.
 - [ ] **[MEDIUM — optional extension]** Secure access to an **industry-standard repetitive (spinning) 360° LiDAR** (e.g. Velodyne VLP-16/32, Ouster OS0/OS1, Hesai) — widely cited in SLAM, navigation and mapping literature. Would enable extension of the study with LIO-SAM and similar backends; not a blocker for the current scope.
 - [ ] **[HIGH]** Supervisor review of v0.3 documents (RESEARCH_PLAN, EXPERIMENTAL_DESIGN, METHODOLOGY, HARDWARE_PAYLOAD). Implement feedback → v1.0.
 - [ ] **[HIGH]** Define temporal synchronization method: PTP IEEE 1588 vs. NTP. Assess IRC5 network capabilities.
@@ -81,7 +81,7 @@
 
 **Key decisions from supervisor feedback:**
 1. **Scope:** Focus exclusively on Phase I (metrological validation). Do not include Reality Gap or optimization in this paper.
-2. **Ground truth:** Use ABB YuMi as kinematic ground truth (±0.02 mm repeatability).
+2. **Ground truth:** Use ABB YuMi as kinematic ground truth (path repeatability 0.10 mm, path accuracy up to 1.36 mm; pose repeatability ±0.02 mm at static points only).
 3. **RobotStudio:** Use as independent trajectory predictor.
 4. **Payload concern:** YuMi arm capacity ~500 g. Original Livox Mid-70 (~590 g) exceeds capacity without mount. Requires review.
 5. **Static IMU logs:** 10–12 h, temperature documented. Extract ARW, BI, RRW numerically with confidence intervals.
@@ -155,14 +155,14 @@
 ### 2026-03-07 — DECISION: Mid-360 confirmed; R3LIVE excluded; M4 hold-out; timeline; plugin contribution
 
 **Hardware & scope:**
-- Livox Mid-360 confirmed available for Session D. Open item "Confirm Mid-360 availability" marked done.
+- Livox Mid-360 confirmed available for Session C. Open item "Confirm Mid-360 availability" marked done.
 - Repetitive (spinning) 360° LiDAR added as optional extension: target industry-standard, widely cited (Velodyne, Ouster, Hesai) for possible future extension; not a blocker.
 
 **Methodology:**
 - METHODOLOGY §5.5: M4 generalization check — fit on T1+T2, evaluate on T3 (held-out) to demonstrate no overfitting.
 
-**Session B backends:**
-- R3LIVE excluded from this study: ideally would test camera+LiDAR fusion, but Session B is RGB-D+IMU only; R3LIVE expects LiDAR+camera and has limited ROS 2 fit. Noted as future extension.
+**Session D backends (visual-inertial):**
+- R3LIVE excluded from this study: ideally would test camera+LiDAR fusion, but Session D is RGB-D+IMU only; R3LIVE expects LiDAR+camera and has limited ROS 2 fit. Noted as future extension.
 - B3 replacement: **OpenVINS** (EKF-based VIO, tight-coupled, ROS 2, distinct from ORB-SLAM3 and GLIM). SLAM_BACKENDS §4.4 and RESEARCH_PLAN §7 updated; README §6 updated.
 
 **Timeline:**

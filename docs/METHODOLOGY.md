@@ -121,7 +121,7 @@ The ground truth trajectory against which ATE/RPE are computed is not perfect. I
 | **Temporal synchronization** | Random / systematic (time offset) | \( \Delta x \approx v_{\max} \times \Delta t \) | At ~100 mm/s, 10 ms offset → ~1 mm spatial error. PTP (IEEE 1588) preferred; NTP fallback with jitter documented. The **measured** offset and jitter must be reported; \( \Delta t \) is the measured or conservative bound. See [EXPERIMENTAL_DESIGN.md §9](EXPERIMENTAL_DESIGN.md). |
 | **Forward kinematics / timestamp interpolation** | Negligible if documented | Sub-mm for typical interpolation | RobotStudio export + FK; interpolation of poses to sensor timestamps. Assume negligible if timestamps are aligned and interpolation is linear or spline-based over short intervals. |
 
-Combined uncertainty (position): Under the assumption of independent contributions, a conservative **combined standard uncertainty** for ground truth position can be taken as the root-sum-square of the relevant terms, or as a worst-case bound (e.g. 0.02 + 0.5 + \(v_{\max}\,\Delta t\) in mm if all are treated as half-widths). The exact combination (RSS vs worst-case) and the numerical values shall be fixed in the experimental report once sync and hand-eye are measured.
+Combined uncertainty (position): Under the assumption of independent contributions, a conservative **combined standard uncertainty** for ground truth position during dynamic trajectory comparison can be taken as the root-sum-square of the relevant terms, or as a worst-case bound. For *dynamic* segments the dominant mechanical terms are path repeatability (0.10 mm) and path accuracy (≤1.36 mm), not pose repeatability (0.02 mm). Example bound: 0.10 + 0.5 + \(v_{\max}\,\Delta t\) in mm. The exact combination (RSS vs worst-case) and the numerical values shall be fixed in the experimental report once sync and hand-eye are measured.
 
 Interpretation of ATE/RPE: Metrics ATE and RPE are interpreted as being above the ground truth uncertainty floor. Differences between conditions (Real vs Sim M1/M4) that are of the same order as or smaller than this floor are not claimed as significant; the uncertainty budget is reported alongside ATE/RPE in any publication so that readers can judge. This budget does not replace the statistical tests (e.g. paired t-test, Wilcoxon) but clarifies the physical limit below which the comparison is not meaningful.
 
@@ -138,7 +138,7 @@ The primary statistical comparison is between ATE distributions across the three
 
 For each trajectory type (T1, T2, T3) and each session (A, B, C, D):
 
-**Step 1 — Normality test:** Apply Shapiro-Wilk test on each ATE distribution (n = 9 per trajectory × 3 repetitions × 3 blocks).
+**Step 1 — Normality test:** Apply Shapiro-Wilk test on each ATE distribution. Sample size per trajectory type: each block (MIX, CW, CCW) runs ~2 h with repetitions of [60 s static → 1–2 min trajectory → 60 s static], yielding **$n \approx 40$–60 repetitions per block**; the three blocks together give **$n \approx 120$–180** per trajectory type (T1, T2, or T3). CW and CCW executions count as repetitions of the same trajectory type for the purpose of testing equivalence (M vs R). See [EXPERIMENTAL_DESIGN.md §3](EXPERIMENTAL_DESIGN.md) for the exact block structure.
 
 Step 2 — Select test:
 - If normal (p > 0.05 in Shapiro-Wilk for all three conditions): Paired t-test
@@ -170,7 +170,7 @@ Equivalently: construct a 90% confidence interval for $\mu_M - \mu_R$; if it lie
 
 **Equivalence margin $\delta$:** The margin is defined in units of Absolute Trajectory Error (ATE). To ensure clinical/practical relevance, the margin is set to 10% of the reference ATE from Real hardware on the most demanding trajectory (T3). For example, if the real hardware accumulates 50 mm ATE RMSE on T3, the equivalence margin is $\pm 5$ mm. This anchors the margin to the specific sensor and trajectory context rather than an arbitrary absolute value.
 
-**Power analysis and sample size:** To achieve 80% power in a TOST design, $n = 9$ (3 blocks × 3 repetitions) is generally insufficient unless the true difference is nearly zero and variance is extremely low. The design requires $n \geq 20-30$ to reliably detect equivalence within a 10% margin. Therefore, the experimental protocol is updated to include **5-10 repetitions per block**, increasing $n$ to $15-30$ per trajectory type. The exact number will be determined after a pilot run to estimate trajectory variance.
+**Power analysis and sample size:** Each 2 h block yields **$n \approx 40$–60** independent repetitions (60 s static → 1–2 min trajectory → 60 s static per repetition). With three blocks per trajectory type, **$n \approx 120$–180** per trajectory type. This provides high statistical power for TOST within a 10% equivalence margin. The final count will be confirmed from the actual trajectory duration and block length during experimentation.
 
 **Success criterion (H0):**
 
@@ -188,9 +188,9 @@ Equivalently: construct a 90% confidence interval for $\mu_M - \mu_R$; if it lie
 To mitigate the multiple comparisons problem (with over 200 possible comparisons across trajectories, sensors, and backends), the study defines a strict hierarchy of endpoints:
 
 **Primary endpoints (subject to TOST and Holm-Bonferroni correction):**
-- ATE RMSE under FAST-LIO2 for Session D (Mid-360) on Trajectory T2
-- ATE RMSE under ORB-SLAM3 for Session B (D455) on Trajectory T2
-- ATE RMSE under GLIM for Session D (Mid-360) on Trajectory T2
+- ATE RMSE under FAST-LIO2 for Session C (Mid-360) on Trajectory T2
+- ATE RMSE under ORB-SLAM3 for Session D (D455) on Trajectory T2
+- ATE RMSE under GLIM for Session C (Mid-360) on Trajectory T2
 
 **Exploratory endpoints (reported without correction, flagged as exploratory):**
 - All T1 and T3 comparisons
@@ -203,16 +203,25 @@ This focuses statistical power on the most representative moderate dynamic condi
 
 ## 4. Sensor Noise Models (M1–M4)
 
-The metrological simulation uses four families of sensor noise models, as described in detail in `SLAM_BACKENDS.md`:
+The metrological simulation uses four families of sensor noise models. Definitions below are the single source of truth; [SLAM_BACKENDS.md](SLAM_BACKENDS.md) lists which SLAM backends are run per session and references this section for noise model semantics.
 
 | ID | Name | Source | Description |
 |----|------|--------|-------------|
 | M1 | Manufacturer | Datasheet / typical values | Default noise parameters taken from vendor specifications or typical values used in the community. Represents \"standard\" simulation. |
 | M2 | Static-Allan | Allan Variance on long static logs | Coefficients ARW, BI, RRW extracted from 10–12 h static logs (D_static). Time-invariant model. |
 | M3 | In-Session-Static | Allan Variance on concatenated static windows within dynamic sessions | Same sensor, mount and temperature as dynamic runs, but using only 60 s static segments before/after trajectories (S0). Captures thermal equilibrium and mounting effects. |
-| M4 | Kinematic-Residual | Residual-based dynamic model | State-dependent model obtained from residuals during motion, with noise variance expressed as a function of velocity, acceleration and jerk. |
+| M4 | Kinematic-Residual | Residual-based dynamic model | State-dependent model: variance as a function of **measured temperature $T$** and kinematic state (velocity, acceleration, jerk). See §5.3–5.4 for formulas and candidate formulations. |
 
-M1–M3 feed directly into the covariance parameters of the Gazebo IMU/LiDAR/camera plugins. M4 adds an explicit dependency on the kinematic state of the sensor, learned from YuMi-based experiments.
+**Kinematic regime taxonomy (used for M4 segmentation):**
+
+| ID | Name | Definition (illustrative) | Purpose |
+|----|------|---------------------------|---------|
+| S0 | Static-in-session | $|\omega| < \epsilon_\omega$, $|a| < \epsilon_a$ for ≥ 60 s | Source for M3 (in-session static Allan). |
+| S1 | Low-velocity | small $\|\omega\|$, low $\|a\|$ (e.g., T1) | Baseline dynamic regime. |
+| S2 | Moderate-acceleration | sustained $\|a\|$ with moderate $\|\omega\|$ (e.g., T2) | Tests acceleration-induced noise. |
+| S3 | High-jerk | large $\|\dot{a}\|$ / step changes (e.g., T3 waypoints) | Excites vibration, g-sensitivity and motion blur. |
+
+M1–M3 feed directly into the covariance parameters of the Gazebo IMU/LiDAR/camera plugins. M4 adds an explicit dependency on the kinematic state and on measured temperature, learned from YuMi-based experiments.
 
 ---
 
@@ -239,34 +248,29 @@ For LiDAR and camera, analogous residuals are obtained by projecting measurement
 
 ### 5.2 Kinematic Segmentation
 
-Residuals are analysed in segments corresponding to different kinematic regimes (see `SLAM_BACKENDS.md`):
-
-- S0: static-in-session ($|\omega| < \epsilon_\omega$, $|a| < \epsilon_a$ for ≥ 60 s),
-- S1: low-velocity, low-acceleration,
-- S2: sustained acceleration with moderate angular velocity,
-- S3: high jerk (step changes in acceleration/velocity, e.g., T3 waypoints).
+Residuals are analysed in segments corresponding to different kinematic regimes (S0–S3 defined in §4 above).
 
 This segmentation makes it possible to quantify how noise statistics change with motion intensity.
 
 ### 5.3 Dynamic Noise Model (M4) — Goal and Thermal Component
 
-Goal: Obtain an explicit variance formula $\sigma^2(t) = f\bigl(t_{\mathrm{on}}(t), \|v\|, \|\omega\|, \|a\|, \|\dot{\omega}\|, \|\dot{a}\|\bigr)$ with identifiable coefficients, fitted from residuals against YuMi ground truth. The aim is to demonstrate empirically which formulation fits the data — not to deduce the correct form a priori. Several candidate formulas are proposed below; the experimental study will validate or discard each.
+Goal: Obtain an explicit variance formula $\sigma^2(t) = f\bigl(T(t), \|v\|, \|\omega\|, \|a\|, \|\dot{\omega}\|, \|\dot{a}\|\bigr)$ with identifiable coefficients, fitted from residuals against YuMi ground truth. The aim is to demonstrate empirically which formulation fits the data — not to deduce the correct form a priori. Several candidate formulas are proposed below; the experimental study will validate or discard each.
 
-Thermal component (from literature): Let $t_{\mathrm{on}}(t)$ denote time since sensor power-on. The static variance is extended to capture thermal warm-up:
+Thermal component: Let $T(t)$ denote the **measured temperature** of the sensor (or its immediate environment). The static variance is modelled as a function of $T$ to capture thermal drift:
 
 $$
-\sigma^2_{\mathrm{static}}(t_{\mathrm{on}}) =
+\sigma^2_{\mathrm{static}}(T) =
 \sigma^2_{\infty} +
-\bigl(\sigma^2_{\mathrm{cold}} - \sigma^2_{\infty}\bigr) e^{-t_{\mathrm{on}}/\tau_T},
+\bigl(\sigma^2_{\mathrm{cold}} - \sigma^2_{\infty}\bigr) \, g(T; T_{\mathrm{ref}}, \tau_T),
 $$
 
-where $\sigma^2_{\mathrm{cold}}$ is variance at cold start (early D_static windows), $\sigma^2_{\infty}$ is variance in thermal steady state (S0 windows), and $\tau_T$ is the thermal time constant. *Known limitation:* temperature also depends on ambient conditions; only $t_{\mathrm{on}}$ is modelled here.
+where $\sigma^2_{\mathrm{cold}}$ is variance at cold start (early D_static windows), $\sigma^2_{\infty}$ is variance in thermal steady state (S0 windows), and $g$ is a suitable function of temperature (e.g. exponential settling toward $T_{\mathrm{ref}}$). **Temperature measurement:** Ideally $T$ is logged throughout static characterization and during YuMi dynamic sessions — via a calibrated thermometer in thermal contact with the sensor housing, or via hardware temperature topics where available (e.g. Livox Mid-360 and RealSense D455 expose internal temperature). The exact sensor and placement will be documented in the experimental report.
 
 <a id="54-candidate-formulas-for-the-kinematic-term-to-validate-empirically"></a>
 
 ### 5.4 Candidate Formulas for the Kinematic Term (to validate empirically)
 
-The full M4 variance combines $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ with a kinematic term. The kinematic state includes: linear velocity $\|v\|$, angular velocity $\|\omega\|$, linear acceleration $\|a\|$, angular acceleration $\|\dot{\omega}\|$, and jerk $\|\dot{a}\|$. The following candidates are proposed for experimental validation. Coefficients are fitted from residuals $R_a(t), R_\omega(t)$ over S1–S3; the study will determine which formulations generalise to T3 (held-out) and improve ATE/RPE vs. M1–M3.
+The full M4 variance combines $\sigma^2_{\mathrm{static}}(T)$ with a kinematic term. The kinematic state includes: linear velocity $\|v\|$, angular velocity $\|\omega\|$, linear acceleration $\|a\|$, angular acceleration $\|\dot{\omega}\|$, and jerk $\|\dot{a}\|$. The following candidates are proposed for experimental validation. Coefficients are fitted from residuals $R_a(t), R_\omega(t)$ over S1–S3; the study will determine which formulations generalise to T3 (held-out) and improve ATE/RPE vs. M1–M3.
 
 | # | Formulation | Formula | Notes |
 |---|-------------|---------|-------|
@@ -296,9 +300,9 @@ LiDAR / Camera: Start with the full set; prune only after checking identifiabili
 
 ### 5.5 Sensor-Specific Instantiation
 
-- **IMU:** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ models the evolution of ARW/BI with warm-up; the kinematic term (per chosen candidate) captures increased noise under rotation, acceleration and jerk (g-sensitivity and structural vibration).
-- **LiDAR:** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ and a time-varying range bias model drift in Time-of-Flight; kinematic coefficients capture increased spread of point-to-plane residuals under high rotational speed and acceleration.
-- **Camera (RGB-D):** $\sigma^2_{\mathrm{static}}(t_{\mathrm{on}})$ approximates thermal drift of intrinsics and depth noise; angular-velocity term captures effective degradation due to motion blur.
+- **IMU:** $\sigma^2_{\mathrm{static}}(T)$ models the evolution of ARW/BI with temperature; the kinematic term (per chosen candidate) captures increased noise under rotation, acceleration and jerk (g-sensitivity and structural vibration).
+- **LiDAR:** $\sigma^2_{\mathrm{static}}(T)$ and a time-varying range bias model capture ToF drift; kinematic coefficients capture increased spread of point-to-plane residuals under high rotational speed and acceleration.
+- **Camera (RGB-D):** $\sigma^2_{\mathrm{static}}(T)$ approximates thermal drift of intrinsics and depth noise; angular-velocity term captures effective degradation due to motion blur.
 
 ### 5.6 M4 Generalization Check (held-out trajectory)
 
