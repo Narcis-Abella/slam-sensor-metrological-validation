@@ -10,27 +10,86 @@
 
 ## 0. Why this study matters
 
-Robotics researchers and practitioners rely heavily on simulation to design and tune SLAM systems before moving to real hardware. In most simulators, sensors are modelled with very simple, constant Gaussian noise. On a robot that moves fast, heats up and vibrates, those assumptions are wrong — and systems that look robust in simulation can fail once they leave the lab.
+Robotics researchers and practitioners rely heavily on simulation to 
+design and tune SLAM systems before moving to real hardware. In most 
+simulators, sensors are modelled with constant Gaussian noise. On a 
+robot that moves fast, heats up and vibrates, those assumptions are 
+wrong — and systems that look robust in simulation can fail once they 
+leave the lab.
 
 This study asks a very concrete question:
 
-> *If we take sensor modelling as seriously as metrology does — using a calibrated robot arm as ground truth and detailed noise models — how close can simulation really get to real sensors?*
+> *If we take sensor modelling as seriously as metrology does — using 
+> a calibrated robot arm as ground truth and detailed noise models — 
+> can we demonstrate statistically that simulation is sufficiently 
+> faithful to real hardware for design decisions?*
 
-This is important for two reasons:
-- For practice: labs and companies make design decisions (sensors, algorithms, parameter tuning) based on simulation. If the sensor models are naïve, those decisions can be systematically biased.
-- For research: many Sim2Real papers study algorithms and environments, but far fewer quantify the role of sensor model fidelity itself in the Reality Gap.
+The word *demonstrate* is deliberate. Current sim-to-real validation 
+practice compares RMSE values or applies significance tests designed 
+to detect differences — not to demonstrate sufficiency. A 
+non-significant result (p > 0.05) does not mean the simulation is 
+good enough; it may simply mean the sample was too small to detect a 
+real gap. No existing study applies formal equivalence testing with 
+pre-specified margins to sensor model validation in robotics. This 
+study does.
+
+This matters for two reasons:
+- **For practice:** labs and companies make design decisions (sensor 
+  selection, algorithm tuning, parameter choices) based on simulation. 
+  If the sensor models are naïve, those decisions can be systematically 
+  biased — and there is currently no rigorous way to know how biased.
+- **For research:** many Sim2Real papers study algorithms and 
+  environments, but far fewer quantify the role of sensor model 
+  fidelity itself in the Reality Gap, and none do so with formal 
+  equivalence testing.
 
 Several works already cover individual pieces of this puzzle:
-- IMUs: [Furrer et al., 2016](docs/RESEARCH_PLAN.md#9-references) showed that you must derive Allan Variance coefficients from real logs, not datasheets, to match inertial drift in simulation.
-- LiDARs: [Liu & Zhang, 2021](docs/RESEARCH_PLAN.md#9-references) analysed the degeneracy risks of solid‑state Livox sensors and their non‑repetitive scan patterns.
-- Dynamic metrology: [Lin et al., 2022 (*Measurement*)](docs/RESEARCH_PLAN.md#9-references) validated dynamic measurement systems with a laser tracker as ground truth, using Allan analysis and fault‑tolerant sensor fusion.
+- **IMUs:** [Furrer et al., 2016](docs/RESEARCH_PLAN.md#9-references) 
+  showed that Allan Variance coefficients must be derived from real 
+  hardware logs — not datasheets — to replicate inertial drift in 
+  simulation.
+- **LiDARs:** [Liu & Zhang, 2021](docs/RESEARCH_PLAN.md#9-references) 
+  characterised the degeneracy risks of solid-state Livox sensors and 
+  their non-repetitive scan patterns.
+- **Dynamic metrology:** [Lin et al., 2022 
+  (*Measurement*)](docs/RESEARCH_PLAN.md#9-references) validated a 
+  dynamic measurement system with a laser tracker as ground truth using 
+  Allan analysis and fault-tolerant sensor fusion.
+- **State-dependent covariance:** learning-based approaches 
+  (VIO-DualProNet, AirIMU) already model IMU noise covariance as a 
+  function of kinematic state — demonstrating that the concept is 
+  physically motivated and practically useful.
 
-What is missing — and what this study contributes — is a single, metrologically grounded framework that:
-1. Uses a sub‑millimetre industrial robot (ABB YuMi) as kinematic ground truth.
-2. Builds state‑dependent sensor noise models whose variance changes with measured temperature and with the sensor’s motion.
-3. Tests those models across multiple tight‑coupled SLAM backends, comparing real sensors, standard simulation and metrological simulation under the same trajectories.
+What is missing — and what this study contributes — is a single, 
+metrologically grounded framework that:
+1. Uses a sub-millimetre industrial robot (ABB YuMi, path repeatability 
+   0.10 mm) as kinematic ground truth for dynamic sensor 
+   characterisation.
+2. Builds an explicit, physically interpretable parametric noise model 
+   (M4) whose variance depends on measured temperature and kinematic 
+   state — fitted from residuals against the YuMi reference, not 
+   learned from black-box data.
+3. Implements M4 in a Gazebo Fortress plugin for the Livox Mid-360 
+   non-repetitive scan pattern — a combination with no existing 
+   open-source solution for ROS 2 Humble.
+4. Validates the complete pipeline using **formal statistical 
+   equivalence testing (TOST)** with pre-specified margins derived from 
+   system requirements: metrological simulation is declared equivalent 
+   to real hardware only if the 90% confidence interval for the mean 
+   ATE difference falls within those margins — not from post-hoc 
+   inspection of RMSE values.
+5. Tests the full pipeline across multiple tight-coupled SLAM backends 
+   to ensure conclusions are not an artefact of a single estimator's 
+   tolerance to noise model mismatch.
 
-The core theoretical contribution is an explicit covariance formula [(model M4)](#m4-target-formula) where the noise variance depends both on thermal state and on kinematic state; the formula and its intuition are in this README, while candidate formulations and full justification live under `docs/`.
+M4 is not proposed as a conceptually new type of noise model — the 
+idea of state-dependent covariance already exists. Its contribution 
+here is different: it provides sufficient simulation fidelity for the 
+equivalence test to have statistical power. Without a model of this 
+precision, TOST cannot distinguish a good simulator from a bad one 
+within margins that are meaningful for system design. The formula, 
+candidate formulations, and physical justification are in 
+[`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §5.
 
 ---
 
@@ -51,7 +110,11 @@ Concretely:
   2. Standard simulation (Gazebo defaults / manufacturer specs),
   3. Metrological simulation (our noise + scanning models).
 
- 
+The three conditions are compared using formal statistical equivalence 
+testing (TOST): we declare metrological simulation equivalent to real 
+hardware only if the 90% confidence interval for the mean difference 
+in ATE falls within a pre-specified margin δ derived from system 
+requirements — not from post-hoc inspection of the data.
 
 The detailed scientific rationale and hypotheses live in [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md).
 
@@ -133,9 +196,9 @@ The simulator will be run under four noise model configurations (see [`docs/SLAM
      - LiDAR: velocity, rotation, acceleration, jerk (motion blur, ToF drift, vibration).  
      - Camera: thermal drift of intrinsics; velocity and rotation for motion blur.
 
-### 5.1 Main contribution: kinematic-state-dependent covariance model (M4)
+### 5.1 Model M4: parametric state-dependent covariance for simulation fidelity
 
-Goal: An explicit variance formula with identifiable coefficients — fitted from residuals against YuMi ground truth — that depends on thermal state (via measured temperature $T$) and kinematic state (linear and angular velocity, acceleration, jerk, angular acceleration). Temperature $T$ is logged during static and dynamic sessions (thermometer or hardware topic).
+M4 is not proposed as a conceptually new noise model — state-dependent covariance estimation already exists in the literature via learning-based approaches (VIO-DualProNet, AirIMU). The contribution of M4 is different: it provides an explicit, physics-motivated parametric formula with identifiable coefficients that can be (a) fitted from residuals against a sub-millimetre kinematic reference, (b) interpreted physically per coefficient, and (c) injected into a Gazebo plugin with sufficient fidelity for TOST to have statistical power. Without a model of this precision, the equivalence test cannot distinguish between a good simulator and a bad one within meaningful margins.
 
 The aim is to demonstrate empirically which formulation fits the data, not to deduce it a priori. Several candidate formulas are proposed in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md#54-candidate-formulas-for-the-kinematic-term-to-validate-empirically) §5.4; the experimental study will validate or discard each.
 
@@ -159,23 +222,21 @@ The model is grounded in: static Allan Variance [\[1\]](docs/RESEARCH_PLAN.md#9-
 
 ## 6. SLAM backends and comparison logic
 
-SLAM algorithms are treated as measuring instruments: we use several per modality to avoid conclusions that depend on a single implementation. The full list and matrix are in [`docs/SLAM_BACKENDS.md`](docs/SLAM_BACKENDS.md); in summary:
+SLAM algorithms are treated as measuring instruments: we use several per modality to avoid conclusions that depend on a single implementation. Using multiple backends also strengthens the statistical argument: if metrological simulation is declared equivalent to real hardware across FAST-LIO2, GLIM, and ORB-SLAM3 simultaneously, the conclusion is not an artefact of a single estimator's tolerance to noise model mismatch. The full list and matrix are in [`docs/SLAM_BACKENDS.md`](docs/SLAM_BACKENDS.md); in summary:
 
-- Cross‑modal baseline: `GLIM` (factor graph, GPU, tight‑coupled LiDAR+IMU and visual‑inertial).
-- LiDAR 3D (Mid‑360): `FAST-LIO2`, `Point-LIO`, `GLIM`.
-- LiDAR 2D (RPLiDAR): `Cartographer 2D`, `KISS-ICP 2D`, `GLIM` (planar 3D, experimental).
-- Visual / Visual–inertial (D455): `ORB-SLAM3`, `GLIM`, `OpenVINS`. (R3LIVE excluded — camera+LiDAR fusion out of scope for Session D.)
-- Loose‑coupled baseline (optional): `RTAB-Map` in 2D, 3D and RGB‑D to contrast tight vs. loose coupling.
+- **Cross-modal baseline:** `GLIM` (factor graph, GPU, tight-coupled LiDAR+IMU and visual-inertial).
+- **LiDAR 3D (Mid-360):** `FAST-LIO2`, `Point-LIO`, `GLIM`.
+- **LiDAR 2D (RPLiDAR):** `Cartographer 2D`, `KISS-ICP 2D`, `GLIM`   (planar 3D, experimental).
+- **Visual / Visual–inertial (D455):** `ORB-SLAM3`, `GLIM`, `OpenVINS`. (R3LIVE excluded — camera+LiDAR fusion out of scope for   Session D.)
+- **Loose-coupled baseline (optional):** `RTAB-Map` in 2D, 3D and RGB-D to contrast tight vs. loose coupling.
 
 For each backend:
 - We tune a nominal configuration on real data (with M2/M3) and freeze it.
 - We derive two sensitivity variants (LOW/HIGH) by scaling key covariances.
-- We run all these configurations on:
-  - real data (YuMi), and  
-  - simulations with M1–M4.
+- We run all configurations on real data (YuMi) and on simulations with M1–M4.
 
-Trajectories are compared against the YuMi using `evo` (ATE/RPE with Umeyama alignment). The statistical design (tests, Bonferroni correction, effect sizes) is in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §2–3. Equivalence testing (TOST) is described in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §3.4.
-
+Trajectories are compared against the YuMi using `evo` (ATE/RPE with Umeyama alignment). Metrological simulation (M4) is declared equivalent to real hardware only if the 90% confidence interval for 
+the mean ATE difference lies entirely within the pre-specified equivalence margin δ — applied independently per backend and per trajectory type. The statistical design (TOST, Bonferroni correction, effect sizes) is in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §2–3.
 ---
 
 ## 7. How to read this repository
@@ -202,18 +263,29 @@ Trajectories are compared against the YuMi using `evo` (ATE/RPE with Umeyama ali
 
 | Period | Milestone |
 |--------|-----------|
-| Until June 2026 | Stage 1 (static characterisation); preparation (mounts, sync, hand-eye protocol). |
-| June 2026 | YuMi dynamic sessions A–D (after exams). Order of sessions at author’s discretion. |
-| From July 2026 | M4 model fitting, Gazebo plugin development (incl. non-repetitive scan pattern), SLAM evaluation matrix. |
-| Q4 2026 – Q1 2027 | Statistical analysis, manuscript submission to *Measurement* / IEEE TIM. |
+| Until June 2026 | Stage 1 (static characterisation); preparation (mounts, sync, hand-eye protocol). Mid-360 warm-up protocol and cross-session hand-eye verification procedure defined and documented. |
+| June 2026 | YuMi dynamic sessions A–D (after exams). Order of sessions at author's discretion. |
+| From July 2026 | **Gazebo Fortress plugin for Mid-360 non-repetitive scan pattern** (standalone open-source deliverable, ROS 2 Humble compatible — no existing solution); M4 model fitting from YuMi residuals; SLAM evaluation matrix with TOST equivalence analysis. |
+| Q4 2026 – Q1 2027 | Statistical analysis, manuscript submission to *Measurement* / IEEE TIM. Plugin released independently on GitHub prior to paper submission. |
 
 ---
 
 ## 9. Known limitations
 
-- Ground truth bound: For dynamic trajectories the floor is set by path repeatability (0.10 mm) and path accuracy (up to 1.36 mm). Pose repeatability (±0.02 mm) applies only to static points. Absolute volumetric accuracy is not characterised.
-- No spinning mechanical LiDAR: LIO-SAM and similar algorithms optimised for repetitive-pattern LiDARs are not included; extension possible if a Velodyne/Ouster becomes available.
-- Thermal model scope: Thermal models assume quasi-steady-state operation; cold-start transients &lt;5 min (typical MEMS warm-up) are not fully modelled.
+- **Ground truth bound:** For dynamic trajectories the floor is set by path repeatability (0.10 mm) and path accuracy (up to 1.36 mm). Pose repeatability (±0.02 mm) applies only to static points. Absolute volumetric accuracy is not characterised.
+
+- **No spinning mechanical LiDAR:** LIO-SAM and similar algorithms optimised for repetitive-pattern LiDARs are not included; extension possible if a Velodyne/Ouster becomes available.
+
+- **Thermal model scope:** Thermal models assume quasi-steady-state operation; cold-start transients &lt;5 min (typical MEMS warm-up) are not fully modelled.
+
+- **Cable routing effects:** USB 3.0 (RealSense D455) and Ethernet (Livox Mid-360) cables routed along the YuMi arm introduce variable external forces on the flange during T2/T3 dynamic trajectories. Mitigated by careful cable chain routing prior to each session; residual effect is documented as a contributor to the ground truth uncertainty budget and declared as an explicit limitation in the experimental report.
+
+- **Mid-360 internal self-heating:** The sensor's internal detector temperature may differ from the externally measured ambient temperature by a non-negligible gradient during the first 15–20 minutes of operation. Protocol requires a minimum 20-minute powered warm-up before any static characterisation log or dynamic session begins. This is documented in [`docs/EXPERIMENTAL_DESIGN.md`](docs/EXPERIMENTAL_DESIGN.md) §2.3.
+
+- **Hand-eye cross-session verification:** Hand-eye calibration is redone per session, but microscopic mount displacement between sessions (dismount and remount) cannot be fully excluded. A fixed verification pose at the start of each dynamic session — reprojection error check against a reference AprilTag board fixed in the environment — serves as an acceptance criterion before data collection begins. Results archived in `data/calibration/`.
+
+- **TOST margin selection:** The equivalence margin δ is defined a priori as 10% of the reference ATE on T2 (moderate trajectory) per backend. This choice is grounded in system requirements but 
+  remains a design decision; results are reported for the chosen δ and sensitivity to alternative margins is discussed.
 
 ---
 
