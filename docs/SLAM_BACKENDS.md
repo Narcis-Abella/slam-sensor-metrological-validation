@@ -17,6 +17,7 @@ This document defines the SLAM backends and sensor noise models that will be use
 GLIM is used as a **cross-modal baseline** wherever feasible, complemented by two well-established ROS/ROS 2 SLAM systems per modality. RTAB-Map is included as an optional loose-coupled baseline.
 
 **Selection rationale (per modality):** Each backend is chosen so that conclusions about sensor model fidelity do not depend on a single architecture. We combine (i) one or two **established** backends (different paradigms: EKF vs factor graph vs dense, feature vs direct) with (ii) **GLIM** as a common cross-modal reference and (iii) **RTAB-Map** as the only loose-coupled baseline to contrast tight vs loose. Justification per backend is given in the tables below and in §7 (extension: repetitive LiDAR).
+Using multiple backends also strengthens the TOST equivalence argument: if metrological simulation is declared equivalent to real hardware across architecturally distinct estimators simultaneously, the conclusion cannot be attributed to a single algorithm's tolerance to noise model mismatch.
 
 ---
 
@@ -114,7 +115,7 @@ This yields, for each sensor/SLAM pair, families of ATE/RPE distributions that c
 - Real vs. Sim(M2/M3) — impact of static Allan-based models.
 - Real vs. Sim(M4) — impact of kinematic-residual modelling.
 
-The expectation is that M4 will produce ATE/RPE behaviour closest to real data across multiple SLAM backends and configurations, demonstrating that modelling motion-dependent noise reduces the Sim2Real gap at the sensor level.
+The expectation is that M4 will produce ATE/RPE distributions closest to real hardware across multiple backends and configurations. The formal validation is not a comparison of means but a TOST equivalence test: metrological simulation is declared equivalent to real hardware only if the 90% confidence interval for the mean ATE difference lies entirely within the pre-specified margin δ — applied independently per backend and per trajectory type. Standard simulation (M1) is expected to fail this test, confirming that metrological modeling is necessary. See METHODOLOGY.md §3.4 for the full TOST protocol.
 
 ---
 
