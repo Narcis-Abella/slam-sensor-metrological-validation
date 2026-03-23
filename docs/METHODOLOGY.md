@@ -1,7 +1,7 @@
 # Methodology — Phase I
 
-**Version:** 0.4  
-**Date:** 2026-03-08  
+**Version:** 0.5  
+**Date:** 2026-03-23  
 **Status:** Pending supervisor review
 
 ---
@@ -117,13 +117,14 @@ The ground truth trajectory against which ATE/RPE are computed is not perfect. I
 | **YuMi pose repeatability (RP)** | Random (per pose) | $\pm0.02$ mm | ABB ISO 9283 specification. Applies only to static points (start/end of trajectories, waypoints in T3). |
 | **YuMi linear path accuracy (AT)** | Systematic (trajectory) | $1.36$ mm (worst-case ISO condition) | ABB ISO 9283 specification for actual vs programmed path. Tested at max speed (1.5 m/s) and max load. Defines the absolute bounds of volumetric accuracy. Since our trajectories max out at 0.1 m/s, the practical AT will be significantly lower, but this bounds the worst-case. |
 | **YuMi linear path repeatability (RT)** | Random (trajectory) | $0.10$ mm | ABB ISO 9283 specification. Consistency when repeating the same path. More relevant for block repetition comparisons. |
-| **Hand-eye calibration** | Systematic (constant offset per session) | &lt; 0.5 mm translation, &lt; 0.5° rotation | AX=XB (Tsai-Lenz or equivalent); re-done per session. See [EXPERIMENTAL_DESIGN.md §10](EXPERIMENTAL_DESIGN.md). Translation error propagates as systematic bias in position comparison. |
+| **Hand-eye calibration** | Systematic (constant offset per session) | < 0.5 mm translation, < 0.5° rotation | AX=XB (Tsai-Lenz or equivalent); re-done per session. See [EXPERIMENTAL_DESIGN.md §10](EXPERIMENTAL_DESIGN.md). Translation error propagates as systematic bias in position comparison. |
 | **Temporal synchronization** | Random / systematic (time offset) | \( \Delta x \approx v_{\max} \times \Delta t \) | At ~100 mm/s, 10 ms offset → ~1 mm spatial error. PTP (IEEE 1588) preferred; NTP fallback with jitter documented. The **measured** offset and jitter must be reported; \( \Delta t \) is the measured or conservative bound. See [EXPERIMENTAL_DESIGN.md §9](EXPERIMENTAL_DESIGN.md). |
+| **Cable routing effects** | Systematic (variable per trajectory) | Estimated < 0.5 mm at T1; higher at T2/T3 | USB 3.0 and Ethernet cables routed along YuMi arm introduce variable external forces on the flange during dynamic trajectories. Mitigated by cable chain routing; residual effect included in budget. |
 | **Forward kinematics / timestamp interpolation** | Negligible if documented | Sub-mm for typical interpolation | RobotStudio export + FK; interpolation of poses to sensor timestamps. Assume negligible if timestamps are aligned and interpolation is linear or spline-based over short intervals. |
 
 Combined uncertainty (position): Under the assumption of independent contributions, a conservative **combined standard uncertainty** for ground truth position during dynamic trajectory comparison can be taken as the root-sum-square of the relevant terms, or as a worst-case bound. For *dynamic* segments the dominant mechanical terms are path repeatability (0.10 mm) and path accuracy (≤1.36 mm), not pose repeatability (0.02 mm). Example bound: 0.10 + 0.5 + \(v_{\max}\,\Delta t\) in mm. The exact combination (RSS vs worst-case) and the numerical values shall be fixed in the experimental report once sync and hand-eye are measured.
 
-Interpretation of ATE/RPE: Metrics ATE and RPE are interpreted as being above the ground truth uncertainty floor. Differences between conditions (Real vs Sim M1/M4) that are of the same order as or smaller than this floor are not claimed as significant; the uncertainty budget is reported alongside ATE/RPE in any publication so that readers can judge. This budget does not replace the statistical tests (e.g. paired t-test, Wilcoxon) but clarifies the physical limit below which the comparison is not meaningful.
+Interpretation of ATE/RPE: Metrics ATE and RPE are interpreted as being above the ground truth uncertainty floor. Differences between conditions (Real vs Sim M1/M4) that are of the same order as or smaller than this floor are not claimed as significant; the uncertainty budget is reported alongside ATE/RPE in any publication so that readers can judge. This budget does not replace the statistical tests (e.g. TOST, paired t-test, Wilcoxon) but clarifies the physical limit below which the comparison is not meaningful.
 
 ---
 
@@ -160,7 +161,7 @@ Report effect size alongside p-value:
 
 ### 3.4 Equivalence Testing for H0 (TOST)
 
-A non-significant result (p > 0.05) in a standard hypothesis test does not demonstrate equivalence. "Absence of evidence is not evidence of absence." With limited sample size, failure to reject the null may simply indicate insufficient statistical power to detect a real difference. Metrology-oriented journals expect equivalence to be demonstrated explicitly [Schuirmann, 1987; Lakens, 2017].
+Standard hypothesis testing asks whether two distributions differ significantly. For sim-to-real validation this is the wrong question: a non-significant result (p > 0.05) does not mean the simulation is good enough — it may simply mean the sample was too small to detect a real difference. The correct question is whether the difference between metrological simulation and real hardware is small enough to be practically irrelevant for system design decisions. TOST answers this question by testing whether the mean difference falls within a pre-specified equivalence margin δ — providing positive evidence of sufficiency, not merely absence of detected difference. This methodology has been standard in pharmaceutical bioequivalence since Schuirmann (1987) [31] and is applied here for the first time to sim-to-real sensor model validation in robotics.
 
 **TOST procedure:** The Two One-Sided Tests procedure tests whether the mean difference $\mu_M - \mu_R$ lies within a pre-specified equivalence margin $[-\delta, +\delta]$. Equivalence is declared if **both** one-sided tests reject:
 - $H_{01}$: $\mu_M - \mu_R \leq -\delta$ (test that difference is not below $-\delta$)
@@ -168,7 +169,7 @@ A non-significant result (p > 0.05) in a standard hypothesis test does not demon
 
 Equivalently: construct a 90% confidence interval for $\mu_M - \mu_R$; if it lies entirely within $[-\delta, +\delta]$, equivalence is declared.
 
-**Equivalence margin $\delta$:** The margin is defined in units of Absolute Trajectory Error (ATE). To ensure clinical/practical relevance, the margin is set to 10% of the reference ATE from Real hardware on the most demanding trajectory (T3). For example, if the real hardware accumulates 50 mm ATE RMSE on T3, the equivalence margin is $\pm 5$ mm. This anchors the margin to the specific sensor and trajectory context rather than an arbitrary absolute value.
+**Equivalence margin $\delta$:** The margin is defined in units of Absolute Trajectory Error (ATE). To ensure clinical/practical relevance, the margin is set to 10% of the reference ATE from Real hardware on the most demanding trajectory (T3). For example, if the real hardware accumulates 50 mm ATE RMSE on T3, the equivalence margin is $\pm 5$ mm. This anchors the margin to the specific sensor and trajectory context rather than an arbitrary absolute value. Sensitivity to alternative margin choices (e.g. 5% and 15%) is reported in the Discussion.
 
 **Power analysis and sample size:** Each 2 h block yields **$n \approx 40$–60** independent repetitions (60 s static → 1–2 min trajectory → 60 s static per repetition). With three blocks per trajectory type, **$n \approx 120$–180** per trajectory type. This provides high statistical power for TOST within a 10% equivalence margin. The final count will be confirmed from the actual trajectory duration and block length during experimentation.
 
@@ -181,7 +182,7 @@ Equivalently: construct a 90% confidence interval for $\mu_M - \mu_R$; if it lie
 
 **If TOST fails (equivalence not declared):** This is a publishable result — it indicates that even empirically derived noise parameters are insufficient to match real hardware within the chosen margin, which has important implications for the field and motivates Phase II. Negative results will be reported explicitly.
 
-**References:** Schuirmann (1987) [RESEARCH_PLAN Ref. 31]; Lakens (2017) [RESEARCH_PLAN Ref. 32].
+**References:** Schuirmann (1987) [RESEARCH_PLAN Ref. 31]; Lakens (2017) [RESEARCH_PLAN Ref. 32]; Wellek (2010) [RESEARCH_PLAN Ref. 48].
 
 ### 3.5 Primary and Exploratory Endpoints
 
@@ -207,10 +208,12 @@ The metrological simulation uses four families of sensor noise models. Definitio
 
 | ID | Name | Source | Description |
 |----|------|--------|-------------|
-| M1 | Manufacturer | Datasheet / typical values | Default noise parameters taken from vendor specifications or typical values used in the community. Represents \"standard\" simulation. |
+| M1 | Manufacturer | Datasheet / typical values | Default noise parameters taken from vendor specifications or typical values used in the community. Represents "standard" simulation. |
 | M2 | Static-Allan | Allan Variance on long static logs | Coefficients ARW, BI, RRW extracted from 10–12 h static logs (D_static). Time-invariant model. |
 | M3 | In-Session-Static | Allan Variance on concatenated static windows within dynamic sessions | Same sensor, mount and temperature as dynamic runs, but using only 60 s static segments before/after trajectories (S0). Captures thermal equilibrium and mounting effects. |
 | M4 | Kinematic-Residual | Residual-based dynamic model | State-dependent model: variance as a function of **measured temperature $T$** and kinematic state (velocity, acceleration, jerk). See §5.3–5.4 for formulas and candidate formulations. |
+
+> **Note on M4 positioning:** State-dependent noise covariance is not a new concept — learning-based approaches (VIO-DualProNet [RESEARCH_PLAN Ref. 40], AirIMU [RESEARCH_PLAN Ref. 41]) already demonstrate its value in VIO systems. M4 contributes an explicit parametric formulation with physically interpretable coefficients, simultaneous combination of measured temperature and full kinematic state vector, and coefficients fitted against a sub-millimetre robot arm reference rather than learned from uncontrolled data. Its primary role in this study is to provide sufficient simulation fidelity for the TOST equivalence test to have statistical power within task-relevant margins. See [RESEARCH_PLAN.md §3.6](RESEARCH_PLAN.md) for full differentiation from prior work.
 
 **Kinematic regime taxonomy (used for M4 segmentation):**
 
@@ -244,7 +247,7 @@ R_a(t) = a_{\mathrm{measured}}(t) - a_{\mathrm{true}}(t), \quad
 R_\omega(t) = \omega_{\mathrm{measured}}(t) - \omega_{\mathrm{true}}(t).
 $$
 
-For LiDAR and camera, analogous residuals are obtained by projecting measurements into a static reference map (for LiDAR) or reference pose (for AprilTags) using ground truth poses and measuring deviations. For LiDAR specifically, points belonging to the YuMi structure itself are removed before residual computation using a self-filter based on the robot’s geometric model (URDF + meshes); this prevents the arm’s motion from contaminating statistics that are meant to characterise the external environment.
+For LiDAR and camera, analogous residuals are obtained by projecting measurements into a static reference map (for LiDAR) or reference pose (for AprilTags) using ground truth poses and measuring deviations. For LiDAR specifically, points belonging to the YuMi structure itself are removed before residual computation using a self-filter based on the robot's geometric model (URDF + meshes); this prevents the arm's motion from contaminating statistics that are meant to characterise the external environment.
 
 ### 5.2 Kinematic Segmentation
 
@@ -291,7 +294,7 @@ Not all kinematic terms are physically relevant for every sensor. Coefficients a
 |--------|-------------------------|-----------|
 | **IMU** | $c_v$ (linear velocity) | The IMU measures acceleration and angular rate, not velocity. Velocity is an integrated quantity; it does not directly affect IMU noise. G-sensitivity and vibration depend on $a$, $\omega$, $\dot{a}$, $\dot{\omega}$ — not on $v$. |
 | **IMU** | $c_{\dot{\omega}}$ (optional) | Angular acceleration may be correlated with jerk in many trajectories; if identifiability is poor, $c_{\dot{\omega}} = 0$ can be tried. |
-| **LiDAR** | — | All terms potentially relevant: $\|v\|$ and $\|\omega\|$ for motion blur during scan; $\|a\|$, $\|\dot{\omega}\|$, $\|\dot{a}\|$ for structural vibration. Pruning only if data show non-identifiability. |
+| **LiDAR** | — | All terms potentially relevant: $\|v\|$ and $\|\omega\|$ for motion blur during scan; $\|a\|$, $\|\dot{\omega}\|$, $\|\dot{a}\|$ for structural vibration. Pruning only if data show non-identifiability. Note: empirical characterization in this study will determine whether Mid-360 range noise is in practice sensitive to kinematic state — prior simulation-based work (Brazeal et al., 2021) suggests range may be robust to vibration while angular accuracy degrades, but this has not been validated experimentally. |
 | **Camera (RGB-D)** | $c_{\dot{\omega}}$, $c_j$ (optional) | Motion blur is dominated by $\|v\|$ and $\|\omega\|$. Acceleration and jerk have weaker direct effect; can be pruned if not identifiable. |
 
 IMU default: $c_v = 0$ always. The remaining terms $c_\omega, c_a, c_{\dot{\omega}}, c_j$ are fitted; $c_{\dot{\omega}}$ may be set to 0 if VIF or condition number indicate collinearity with $c_j$.
@@ -301,7 +304,7 @@ LiDAR / Camera: Start with the full set; prune only after checking identifiabili
 ### 5.5 Sensor-Specific Instantiation
 
 - **IMU:** $\sigma^2_{\mathrm{static}}(T)$ models the evolution of ARW/BI with temperature; the kinematic term (per chosen candidate) captures increased noise under rotation, acceleration and jerk (g-sensitivity and structural vibration).
-- **LiDAR:** $\sigma^2_{\mathrm{static}}(T)$ and a time-varying range bias model capture ToF drift; kinematic coefficients capture increased spread of point-to-plane residuals under high rotational speed and acceleration.
+- **LiDAR:** $\sigma^2_{\mathrm{static}}(T)$ and a time-varying range bias model capture ToF drift; kinematic coefficients capture increased spread of point-to-plane residuals under high rotational speed and acceleration. Whether kinematic terms are identifiable and significant for the Mid-360 is an open empirical question addressed by this study.
 - **Camera (RGB-D):** $\sigma^2_{\mathrm{static}}(T)$ approximates thermal drift of intrinsics and depth noise; angular-velocity term captures effective degradation due to motion blur.
 
 ### 5.6 M4 Generalization Check (held-out trajectory)
@@ -324,18 +327,19 @@ Stage 1: Real Hardware Data Collection
   ↓ FAST-LIO2 / GLIM estimation → estimated trajectory R
 
 Stage 2: Standard Simulation
-  ↓ Import YuMi trajectory into Gazebo (identical joint commands)
+  ↓ Import YuMi trajectory into Gazebo Fortress (identical joint commands)
   ↓ Standard Gazebo IMU/LiDAR plugins (default Gaussian noise)
   ↓ Same SLAM backend → estimated trajectory S
 
 Stage 3: Metrological Simulation
   ↓ Same Gazebo trajectory
-  ↓ Custom plugin: ARW + BI + RRW noise injection, Rosetta topology
+  ↓ Custom plugin: ARW + BI + RRW noise injection, Rosetta topology,
+    M4 state-dependent covariance (temperature + kinematic state)
   ↓ Same SLAM backend → estimated trajectory M
 
 Stage 4: Evaluation
   ↓ evo_ape + evo_rpe (ATE, RPE) for R, S, M against YuMi ground truth
-  ↓ Statistical tests (§3)
+  ↓ TOST equivalence testing (M vs R) + NHST significance test (S vs R)
   ↓ CW/CCW asymmetry analysis (§7)
 ```
 
@@ -385,6 +389,7 @@ This experiment applies to all four sessions (A, B, C, D) and provides a sensor-
 | Trajectory format conversion | `evo` utilities | TUM / KITTI / EuRoC → TUM for comparison |
 | ATE / RPE evaluation | `evo_ape`, `evo_rpe` | Umeyama alignment, per-trajectory |
 | Statistical tests | `scipy.stats` (Python) | Shapiro-Wilk, t-test, Wilcoxon, Cohen's d |
+| Equivalence testing (TOST) | `scipy.stats` + manual 90% CI | Or `pingouin` library (`tost` function) |
 | Visualization | `matplotlib`, `evo` plot tools | ADEV curves, trajectory overlays, box plots |
 | Simulation (standard) | Gazebo Fortress default plugins | Baseline condition S |
-| Simulation (metrological) | Custom Gazebo plugin (to be developed) | Condition M; open-source output |
+| Simulation (metrological) | Custom Gazebo Fortress plugin (to be developed) | Condition M; open-source output; ROS 2 Humble compatible |
