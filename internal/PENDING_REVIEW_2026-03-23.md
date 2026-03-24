@@ -37,7 +37,7 @@ Track high-impact review findings that should be resolved before supervisor revi
 - [ ] **Increase hand-eye protocol target to >=30 poses (orientation-diverse).**
 - [ ] **Define warm-up policy for WT901C (MPU9250) and D455 IMU (BMI055).**
 - [x] **Fix document version consistency (`SLAM_BACKENDS.md` currently v0.2 vs v0.5 set).** (Updated to v0.5)
-- [ ] **Reframe H1 as exploratory/conditioned unless isolating design is guaranteed.**
+- [x] **Reframe H1 as exploratory/conditioned unless isolating design is guaranteed.** (Reframed in `RESEARCH_PLAN.md`)
 
 ---
 

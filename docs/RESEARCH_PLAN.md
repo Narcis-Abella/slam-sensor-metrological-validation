@@ -127,7 +127,7 @@ What has not been done — and what this study contributes:
 
 **Secondary contribution:** An explicit, physics-motivated parametric noise model (M4) that combines measured temperature and full kinematic state vector with interpretable coefficients — fitted from dynamic residuals against a sub-millimetre robot arm reference. Unlike learning-based state-dependent covariance methods, M4 is auditable, physically justified per coefficient, and directly injectable into Gazebo simulation plugins.
 
-**Software contribution:** A Gazebo Fortress plugin for the Livox Mid-360 non-repetitive (Rosetta) scan pattern with empirically-derived noise model, compatible with ROS 2 Humble. No such plugin currently exists — all existing Mid-360 simulation plugins target Gazebo Classic (EOL January 2025), and community demand for a Fortress solution has been documented since April 2023 (gz-sim issue #1958) [47] without resolution.
+**Software contribution:** A CPU-based Gazebo Fortress plugin for the Livox Mid-360 non-repetitive (Rosetta) scan pattern with empirically-derived noise model, fully compatible with ROS 2 Humble. While a third-party plugin exists for Gazebo Harmonic (RobotecAI), it requires NVIDIA OptiX/CUDA for ray tracing, making it inaccessible for generic hardware. Our Fortress plugin requires no dedicated GPU, targets the current ROS 2 LTS (Humble, supported until 2027), and is the first to inject parametric state-dependent noise (M4). Community demand for a Fortress solution has been documented since April 2023 (gz-sim issue #1958) [47] without resolution.
 
 **Experimental contribution:** First empirical characterization of whether Livox Mid-360 range noise statistics change under mechanical vibration and kinematic stress — a gap confirmed absent in the literature (Schlager et al. [45] tested Ouster only; Brazeal et al. [46] simulated Risley prism misalignment only, not validated experimentally).
 
@@ -149,7 +149,7 @@ Formal test: **TOST (Two One-Sided Tests)** for equivalence [Schuirmann, 1987; L
 **Pre-registration (Session D):** Session D (RealSense D455, visual-inertial) is expected to show the largest Reality Gap of all sessions, due to visual SLAM's dependence on texture and illumination that standard Gazebo does not capture. This outcome is expected and publishable — it quantifies the limitation that motivates Phase II.
 
 **Secondary hypothesis (H1):**
-> The quality of the IMU (ARW, Bias Instability) has a measurable and systematic effect on tight-coupling SLAM performance (ATE/RPE), quantifiable across three IMUs of different quality grades under identical dynamic conditions.
+> This is an exploratory hypothesis: While comparing three IMUs of different quality grades under identical kinematic conditions, we hypothesize that IMU quality (ARW, Bias Instability) has a systematic effect on tight-coupled SLAM performance (ATE/RPE). However, this effect is conditioned by the varying multi-modal fusion architectures (IMU-only, 2D LiDAR, 3D LiDAR, Visual-Inertial) present in each session, which prevents perfect isolation of the IMU variable.
 
 **Secondary hypothesis (H2):**
 > Systematic CW/CCW asymmetry is observable in gyroscope bias — i.e., bias drift differs between clockwise and counter-clockwise rotation at identical angular velocities — and this asymmetry is captured more accurately by the metrological model than by standard simulation.
