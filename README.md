@@ -1,10 +1,12 @@
 # Metrological Validation of Visual-LiDAR SLAM Sensors
 
+<p align="justify">
 **Institution:** IQS School of Engineering (Universitat Ramon Llull), Barcelona  
 **Author:** Narcís Abella  
 **Supervisor:** Dr. Antonio Gabino Salazar Martín  
 **Status:** Design phase — pending experimental execution  
 **Last updated:** 2026-03-06
+</p>
 
 ---
 
@@ -16,14 +18,20 @@ simulators, sensors are modelled with constant Gaussian noise. On a
 robot that moves fast, heats up and vibrates, those assumptions are 
 wrong — and systems that look robust in simulation can fail once they 
 leave the lab.
+</p>
 
+<p align="justify">
 This study asks a very concrete question:
+</p>
 
+> <p align="justify">
 > *If we take sensor modelling as seriously as metrology does — using 
 > a calibrated robot arm as ground truth and detailed noise models — 
 > can we demonstrate statistically that simulation is sufficiently 
 > faithful to real hardware for design decisions?*
+> </p>
 
+<p align="justify">
 The word *demonstrate* is deliberate. Current sim-to-real validation 
 practice compares RMSE values or applies significance tests designed 
 to detect differences — not to demonstrate sufficiency. A 
@@ -32,8 +40,11 @@ good enough; it may simply mean the sample was too small to detect a
 real gap. No existing study applies formal equivalence testing with 
 pre-specified margins to sensor model validation in robotics. This 
 study does.
+</p>
 
+<p align="justify">
 This matters for two reasons:
+</p>
 - **For practice:** labs and companies make design decisions (sensor 
   selection, algorithm tuning, parameter choices) based on simulation. 
   If the sensor models are naïve, those decisions can be systematically 
@@ -43,7 +54,9 @@ This matters for two reasons:
   fidelity itself in the Reality Gap, and none do so with formal 
   equivalence testing.
 
+<p align="justify">
 Several works already cover individual pieces of this puzzle:
+</p>
 - **IMUs:** [Furrer et al., 2016](docs/RESEARCH_PLAN.md#9-references) 
   showed that Allan Variance coefficients must be derived from real 
   hardware logs — not datasheets — to replicate inertial drift in 
@@ -60,8 +73,10 @@ Several works already cover individual pieces of this puzzle:
   function of kinematic state — demonstrating that the concept is 
   physically motivated and practically useful.
 
+<p align="justify">
 What is missing — and what this study contributes — is a single, 
 metrologically grounded framework that:
+</p>
 1. Uses a sub-millimetre industrial robot (ABB YuMi, path repeatability 
    0.10 mm) as kinematic ground truth for dynamic sensor 
    characterisation.
@@ -82,6 +97,7 @@ metrologically grounded framework that:
    to ensure conclusions are not an artefact of a single estimator's 
    tolerance to noise model mismatch.
 
+<p align="justify">
 M4 is not proposed as a conceptually new type of noise model — the 
 idea of state-dependent covariance already exists. Its contribution 
 here is different: it provides sufficient simulation fidelity for the 
@@ -90,18 +106,27 @@ precision, TOST cannot distinguish a good simulator from a bad one
 within margins that are meaningful for system design. The formula, 
 candidate formulations, and physical justification are in 
 [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §5.
+</p>
 
+<p align="justify">
 The study does not assume that M4 is necessary. The four noise model configurations (M1–M4) form an epistemic ladder: from current practice (M1, datasheet) to metrologically correct but low-cost (M2, static Allan) to operationally refined (M3, in-session static) to fully state-dependent (M4, kinematic-residual and thermal). The TOST is applied at every rung. If M2 already achieves statistical equivalence within δ, that is the primary result: it means that a rigorous static Allan characterisation — accessible to any laboratory with a vibration-isolated bench and a 10–12 hour log — resolves a problem the community has spent decades either ignoring or over-complicating. M4 then serves as a positive control: without it, a passing result at M2 could be an artefact of the SLAM backends' insensitivity to high-frequency noise rather than genuine sensor model fidelity. The hierarchy is not redundant — it is what makes any result at any rung interpretable.
+</p>
 
 ---
 
 ## 1. What this project is about
 
+<p align="justify">
 This repository contains the design of a stand‑alone metrological study on Visual–LiDAR SLAM. Its goal is simple to state:
+</p>
 
+> <p align="justify">
 > Quantitatively measure how close a simulator can get to real sensors if we model their noise and scanning behaviour with the same level of care used in instrumentation and metrology.
+> </p>
 
+<p align="justify">
 Concretely:
+</p>
 - We use an ABB YuMi collaborative robot as kinematic ground truth (path repeatability 0.10 mm; path accuracy up to 1.36 mm; pose repeatability ±0.02 mm at static points only) and RobotStudio as an independent trajectory predictor.
 - We characterise three sensor families: IMUs, LiDARs (2D mechanical and 3D solid‑state Livox Mid‑360) and an RGB‑D camera (RealSense D455).
 - We build a family of sensor noise models whose variance depends on:
@@ -112,33 +137,45 @@ Concretely:
   2. Standard simulation (Gazebo defaults / manufacturer specs),
   3. Metrological simulation (our noise + scanning models).
 
+<p align="justify">
 The three conditions are compared using formal statistical equivalence 
 testing (TOST): we declare metrological simulation equivalent to real 
 hardware only if the 90% confidence interval for the mean difference 
 in ATE falls within a pre-specified margin δ derived from system 
 requirements — not from post-hoc inspection of the data.
+</p>
 
+<p align="justify">
 The detailed scientific rationale and hypotheses live in [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md).
+</p>
 
 ---
 
 ## 2. Scope and possible extensions
 
+<p align="justify">
 This study was originally conceived as the sensor‑level step of a broader research line on Sim‑to‑Real Visual–LiDAR SLAM (with possible extensions to a mobile‑platform Reality Gap benchmark and large‑scale SLAM optimisation in simulation).  
 In the context of this degree project, however, only the metrological validation with YuMi ground truth is in scope. Any mobile‑platform benchmark or automatic optimisation stage is treated strictly as possible future work, not as a commitment of this project.
+</p>
 
+<p align="justify">
 For a compact overview of the current study’s goals and contributions, see [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md), sections 1–2 and 6.
+</p>
 
 ---
 
 ## 3. Hardware and ground truth at a glance
 
+<p align="justify">
 Ground truth platform
+</p>
 - ABB YuMi IRC5 dual‑arm cobot  
 - Path repeatability 0.10 mm; path accuracy up to 1.36 mm; pose repeatability ±0.02 mm at static points only.  
 - Trajectories programmed in RobotStudio and exported as time‑stamped poses.
 
+<p align="justify">
 Sensors under test (sessions A–D by modality: IMU-only → 2D LiDAR → 3D LiDAR → visual‑inertial)
+</p>
 
 | ID | Sensor | Type | Role |
 |----|--------|------|------|
@@ -147,26 +184,36 @@ Sensors under test (sessions A–D by modality: IMU-only → 2D LiDAR → 3D LiD
 | S3 | Livox Mid‑360 (ICM40609) | 3D LiDAR + IMU | Primary 3D LiDAR (Session C) |
 | S4 | Intel RealSense D455 (BMI055) | RGB‑D + IMU | Visual–inertial sensor (Session D) |
 
+<p align="justify">
 Geometry, payload and viability details are in [`docs/HARDWARE_PAYLOAD.md`](docs/HARDWARE_PAYLOAD.md).
+</p>
 
 ---
 
 ## 4. High‑level experimental design
 
+<p align="justify">
 The experimental design has two stages; full details live in [`docs/EXPERIMENTAL_DESIGN.md`](docs/EXPERIMENTAL_DESIGN.md).
+</p>
 
 ### 4.1 Stage 1 — Static characterisation
 
+<p align="justify">
 Performed without the robot arm:
+</p>
 - IMUs: 10–12 h static logs per IMU. Allan Variance (ARW, Bias Instability, RRW) + Six‑Position Test (IEEE Std 1293).
 - LiDARs: sensor facing a flat wall. We track how point‑to‑plane residuals drift over time (thermal ToF drift).
 - Camera: RealSense D455 observing a static AprilTag board for several hours. We quantify pose drift of the board (thermal deformation of intrinsics and FPN).
 
+<p align="justify">
 These logs feed the static parts of the noise models (manufacturer vs. long‑term Allan vs. in‑session static).
+</p>
 
 ### 4.2 Stage 2 — Dynamic sessions on YuMi
 
+<p align="justify">
 Four sessions, one per sensor configuration:
+</p>
 
 | Session | Sensor | Motion DOF | Notes |
 |---------|--------|-----------|-------|
@@ -175,17 +222,23 @@ Four sessions, one per sensor configuration:
 | C | Livox Mid‑360 | 3D | 3D LiDAR‑IMU with Rosetta pattern |
 | D | RealSense D455 | 3D | Visual–inertial (RGB‑D + IMU) |
 
+<p align="justify">
 Each session follows the same pattern:
+</p>
 - 60 s static → Block MIX (CW/CCW/CW) → cooldown → Block CW → cooldown → Block CCW → 60 s static.
 - Three trajectory profiles (smooth / moderate / aggressive) per session (T1/T2/T3), re‑used across sensors.
 
+<p align="justify">
 The static 60 s segments inside dynamic runs are also used to characterise thermal behaviour in working conditions.
+</p>
 
 ---
 
 ## 5. Noise models — from datasheet to kinematic residuals
 
+<p align="justify">
 The simulator will be run under four noise model configurations (see [`docs/SLAM_BACKENDS.md`](docs/SLAM_BACKENDS.md) and [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §4–5):
+</p>
 
 1. M1 — Manufacturer: values from datasheets or typical community practice.
 2. M2 — Static Allan: coefficients (ARW, BI, RRW) from long static logs (Stage 1).
@@ -200,15 +253,23 @@ The simulator will be run under four noise model configurations (see [`docs/SLAM
 
 ### 5.1 Model M4: parametric state-dependent covariance for simulation fidelity
 
+<p align="justify">
 M4 is not proposed as a conceptually new noise model — state-dependent covariance estimation already exists in the literature via learning-based approaches (VIO-DualProNet, AirIMU). The contribution of M4 is different: it provides an explicit, physics-motivated parametric formula with identifiable coefficients that can be (a) fitted from residuals against a sub-millimetre kinematic reference, (b) interpreted physically per coefficient, and (c) injected into a Gazebo plugin with sufficient fidelity for TOST to have statistical power. Without a model of this precision, the equivalence test cannot distinguish between a good simulator and a bad one within meaningful margins.
+</p>
 
+<p align="justify">
 The aim is to demonstrate empirically which formulation fits the data, not to deduce it a priori. Several candidate formulas are proposed in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md#54-candidate-formulas-for-the-kinematic-term-to-validate-empirically) §5.4; the experimental study will validate or discard each.
+</p>
 
 <a id="m4-target-formula"></a>
 
+<p align="justify">
 $\sigma^2(t) = f\bigl( T(t),\, \|v(t)\|,\, \|\omega(t)\|,\, \|a(t)\|,\, \|\dot{\omega}(t)\|,\, \|\dot{a}(t)\| \bigr)$
+</p>
 
+<p align="justify">
 where:
+</p>
 - $T(t)$ is measured temperature (thermal state).
 - $\|v(t)\|$ is linear velocity magnitude.
 - $\|\omega(t)\|$ is angular velocity magnitude (rotation).
@@ -216,13 +277,17 @@ where:
 - $\|\dot{\omega}(t)\|$ is angular acceleration magnitude.
 - $\|\dot{a}(t)\|$ is jerk magnitude (rate of change of linear acceleration).
 
+<p align="justify">
 The model is grounded in: static Allan Variance [\[1\]](docs/RESEARCH_PLAN.md#9-references), exponential thermal settling [\[11\]](docs/RESEARCH_PLAN.md#9-references), [\[12\]](docs/RESEARCH_PLAN.md#9-references), g-sensitivity and motion-dependent noise in MEMS [\[11\]](docs/RESEARCH_PLAN.md#9-references), residual-based identification with ground truth [\[13\]](docs/RESEARCH_PLAN.md#9-references), and robot-arm validation [\[10\]](docs/RESEARCH_PLAN.md#9-references). See [`docs/RESEARCH_PLAN.md`](docs/RESEARCH_PLAN.md) §3.6 and References for full citations.
+</p>
 
 ---
 
 ## 6. SLAM backends and comparison logic
 
+<p align="justify">
 SLAM algorithms are treated as measuring instruments: we use several per modality to avoid conclusions that depend on a single implementation. Using multiple backends also strengthens the statistical argument: if metrological simulation is declared equivalent to real hardware across FAST-LIO2, GLIM, and ORB-SLAM3 simultaneously, the conclusion is not an artefact of a single estimator's tolerance to noise model mismatch. The full list and matrix are in [`docs/SLAM_BACKENDS.md`](docs/SLAM_BACKENDS.md); in summary:
+</p>
 
 - **Cross-modal baseline:** `GLIM` (factor graph, GPU, tight-coupled LiDAR+IMU and visual-inertial).
 - **LiDAR 3D (Mid-360):** `FAST-LIO2`, `Point-LIO`, `GLIM`.
@@ -230,13 +295,17 @@ SLAM algorithms are treated as measuring instruments: we use several per modalit
 - **Visual / Visual–inertial (D455):** `ORB-SLAM3`, `GLIM`, `OpenVINS`. (R3LIVE excluded — camera+LiDAR fusion out of scope for   Session D.)
 - **Loose-coupled baseline (optional):** `RTAB-Map` in 2D, 3D and RGB-D to contrast tight vs. loose coupling.
 
+<p align="justify">
 For each backend:
+</p>
 - We tune a nominal configuration on real data (with M2/M3) and freeze it.
 - We derive two sensitivity variants (LOW/HIGH) by scaling key covariances.
 - We run all configurations on real data (YuMi) and on simulations with M1–M4.
 
+<p align="justify">
 Trajectories are compared against the YuMi using `evo` (ATE/RPE with Umeyama alignment). Metrological simulation (M4) is declared equivalent to real hardware only if the 90% confidence interval for 
 the mean ATE difference lies entirely within the pre-specified equivalence margin δ — applied independently per backend and per trajectory type. The statistical design (TOST, Bonferroni correction, effect sizes) is in [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §2–3.
+</p>
 
 ---
 
@@ -291,8 +360,10 @@ the mean ATE difference lies entirely within the pre-specified equivalence margi
 
 ## 10. License
 
+<p align="justify">
 MIT License. See [LICENSE](LICENSE) for details.
-
-Research conducted at IQS School of Engineering (Universitat Ramon Llull), Barcelona.
 </p>
 
+<p align="justify">
+Research conducted at IQS School of Engineering (Universitat Ramon Llull), Barcelona.
+</p>
