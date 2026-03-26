@@ -252,7 +252,7 @@ The aim is to demonstrate empirically which formulation fits the data, not to de
 
 <a id="m4-target-formula"></a>
 
-$\sigma^2(t) = f\bigl( T(t),\, \|v(t)\|,\, \|\omega(t)\|,\, \|a(t)\|,\, \|\dot{\omega}(t)\|,\, \|\dot{a}(t)\| \bigr)$
+$\sigma^2(t) = f\bigl( T(t), \|v(t)\|, \|\omega(t)\|, \|a(t)\|, \|\dot{\omega}(t)\|, \|\dot{a}(t)\| \bigr)$
 
 where:
 - $T(t)$ is measured temperature (thermal state).
