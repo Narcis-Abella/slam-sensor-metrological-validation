@@ -1,13 +1,21 @@
 # Extended Literature Review & Reference Audit
-**Version:** 1.0 (Post-Adversarial Audit)  
+
+<div align="justify">
+
+**Version:** 0.5  
 **Date:** 2026-03-23  
-**Status:** Completed  
+**Status:** Pending supervisor review  
 
 > **Purpose:** This document aggregates the findings of an exhaustive, multi-database literature search (arXiv, Google Scholar, IEEE Xplore, ScienceDirect via Exa/MCP) covering over 120+ recent papers. The goal is to mathematically and methodologically shield ("blindar") the Phase I metrological validation proposal against any novelty or state-of-the-art critiques in high-impact journals like *IEEE TIM* or *Measurement*.
+
+</div>
 
 ---
 
 ## 1. State-Dependent Covariance & Kinematic Noise in IMU/VIO (M4 Model Context)
+
+<div align="justify">
+
 The proposal's M4 model uses kinematic states (velocity, acceleration, jerk) to modulate noise covariance. The audit confirms this is a highly active research area, validating its relevance but requiring careful differentiation from learning-based black-box models.
 
 **Key Findings & Prior Art:**
@@ -22,9 +30,14 @@ The proposal's M4 model uses kinematic states (velocity, acceleration, jerk) to 
 
 *Reviewer Conclusion:* The field is flooded with *learning-based* (CNN/DNN) covariance estimators. The proposal's decision to use an **explicit, parametric, interpretable** M4 model fitted to sub-millimeter ground truth is a strong, defensible differentiator for metrology journals.
 
+</div>
+
 ---
 
 ## 2. Robot Manipulators as Ground Truth for Dynamic Metrology
+
+<div align="justify">
+
 Using a 6-DOF/7-DOF manipulator as a dynamic reference is rare but growing. We must cite these to show awareness of the methodology while highlighting our unique TOST integration.
 
 **Key Findings & Prior Art:**
@@ -40,9 +53,14 @@ Using a 6-DOF/7-DOF manipulator as a dynamic reference is rare but growing. We m
 
 *Reviewer Conclusion:* The use of the YuMi arm is well-supported. The critical gap we fill is moving from *calibration* (finding fixed parameters) to *stochastic noise modeling* (finding variance under dynamic stress).
 
+</div>
+
 ---
 
 ## 3. Equivalence Testing (TOST) in Robotics and Sim-to-Real
+
+<div align="justify">
+
 The literature audit confirms that **no prior work has applied TOST to sim-to-real sensor model validation**. This is the absolute core novelty of the paper.
 
 **Key Findings & Prior Art:**
@@ -57,9 +75,14 @@ The literature audit confirms that **no prior work has applied TOST to sim-to-re
 
 *Reviewer Conclusion:* The discovery of Wu et al. (2025) using TOST for ADAS scenarios validates the statistical approach perfectly. We remain the first to apply it to *sensor noise models and SLAM trajectories*.
 
+</div>
+
 ---
 
 ## 4. Livox Mid-360, Solid-State LiDAR Simulation & Vibration
+
+<div align="justify">
+
 We need to prove that simulating the Rosetta pattern in modern Gazebo (Fortress/Harmonic) is an unsolved problem, and that vibration effects on Mid-360 range are uncharted.
 
 **Key Findings & Prior Art:**
@@ -73,9 +96,14 @@ We need to prove that simulating the Rosetta pattern in modern Gazebo (Fortress/
 
 *Reviewer Conclusion:* The claim that a ROS2 Humble / Gazebo Fortress plugin for the Mid-360 is a valuable open-source contribution is fully validated. The lack of empirical vibration characterization for the Mid-360 remains a true gap.
 
+</div>
+
 ---
 
 ## 5. Thermal Drift and Fixed-Pattern Noise (FPN) in RGB-D (RealSense D455)
+
+<div align="justify">
+
 Validating that RealSense cameras suffer from thermal and temporal drift, establishing the necessity of our static Session D characterization.
 
 **Key Findings & Prior Art:**
@@ -88,9 +116,14 @@ Validating that RealSense cameras suffer from thermal and temporal drift, establ
 
 *Reviewer Conclusion:* Thermal drift in depth sensors is well documented, but its specific impact on *visual-inertial odometry (VIO) drift* over time compared to simulation (where cameras are thermally perfect) is an excellent target for our TOST framework.
 
+</div>
+
 ---
 
 ## 6. Sim-to-Real Gap Quantification Methodologies (Broader Context)
+
+<div align="justify">
+
 To round out the 100+ references scope, we reviewed how the broader robotics community measures the Sim2Real gap.
 
 **Key Findings & Prior Art:**
@@ -102,9 +135,16 @@ To round out the 100+ references scope, we reviewed how the broader robotics com
 44. **Gahlert et al. (2020)**, *"Cityscapes 3D: Dataset and Benchmark for 9 DoF Vehicle Detection"*.
 45. **Bärsan et al. (2019)**, *"Robust Dense Mapping for Large-Scale Dynamic Environments"*.
 
+</div>
+
 ## Final Synthesis & Actionable Insights
+
+<div align="justify">
+
 1. **The TOST Novelty is Intact:** The recent (2025) application of TOST in autonomous driving scenarios (Wu et al.) means the methodology is recognized by reviewers, but *we are the first to apply it to SLAM sensor noise and manipulator-based ground truth*.
 2. **M4 Positioning is Correct:** We must explicitly state that M4 is a parametric, metrological alternative to the flood of 2024/2025 Neural-Net-based covariance estimators (Cheng, Khosoussi, Qiu, etc.).
 3. **Fortress Plugin Value:** The community is still struggling with Livox Mid-360 simulation in modern Gazebo. Releasing this plugin will drive citations.
 
 *(Note: This review encapsulates >120 sources analyzed during the audit, synthesizing the 45 most critical new papers to supplement the 60+ already present in the Phase I documentation pool).*
+
+</div>
