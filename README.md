@@ -16,12 +16,14 @@
 
 <div align="justify">
 
-Robotics researchers and practitioners rely heavily on simulation to 
-design and tune SLAM systems before moving to real hardware. In most 
-simulators, sensors are modelled with constant Gaussian noise. On a 
-robot that moves fast, heats up and vibrates, those assumptions are 
-wrong — and systems that look robust in simulation can fail once they 
-leave the lab.
+Robotics researchers rely heavily on simulation to design and tune SLAM 
+systems before deployment. The dominant response to the sim-to-real gap — 
+domain randomisation — has a well-documented failure mode: robots learn to 
+exploit simulator inconsistencies rather than solve the actual task (Muratore 
+et al., 2022; Aljalbout et al., *Annual Review*, 2026). The root cause is 
+not insufficient randomisation — it is that sensor models are never validated 
+against real hardware. A robot trained on an unvalidated sensor model doesn't 
+learn robustness; it learns to assume the simulator's artefacts.
 
 This study asks a very concrete question:
 
