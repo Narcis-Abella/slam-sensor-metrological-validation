@@ -16,7 +16,6 @@ simulators, sensors are modelled with constant Gaussian noise. On a
 robot that moves fast, heats up and vibrates, those assumptions are 
 wrong — and systems that look robust in simulation can fail once they 
 leave the lab.
-</p>
 
 This study asks a very concrete question:
 
@@ -295,3 +294,5 @@ the mean ATE difference lies entirely within the pre-specified equivalence margi
 MIT License. See [LICENSE](LICENSE) for details.
 
 Research conducted at IQS School of Engineering (Universitat Ramon Llull), Barcelona.
+</p>
+
