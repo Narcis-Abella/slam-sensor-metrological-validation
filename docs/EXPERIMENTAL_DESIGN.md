@@ -1,12 +1,18 @@
 # Experimental Design — Phase I
 
+<div align="justify">
+
 **Version:** 0.5  
 **Date:** 2026-03-23  
 **Status:** Pending supervisor review and payload weight confirmation (physical scale)
 
+</div>
+
 ---
 
 ## Table of Contents
+
+<div align="justify">
 
 1. [Overview and Session Structure](#1-overview-and-session-structure)
 2. [Pre-Dynamic: Static Characterization](#2-pre-dynamic-static-characterization)
@@ -19,9 +25,13 @@
 9. [Temporal Synchronization Protocol](#9-temporal-synchronization-protocol)
 10. [Hand-Eye Calibration Protocol](#10-hand-eye-calibration-protocol)
 
+</div>
+
 ---
 
 ## 1. Overview and Session Structure
+
+<div align="justify">
 
 Phase I is organized into **two stages**:
 
@@ -30,9 +40,15 @@ Phase I is organized into **two stages**:
 
 **Total estimated robot arm time:** ~32 h (4 sessions × 8 h), plus ~2 h for hand-eye calibration per session.
 
+</div>
+
 ### Session summary
 
+<div align="justify">
+
 Sessions are ordered by modality complexity (IMU-only → 2D LiDAR → 3D LiDAR → visual-inertial):
+
+</div>
 
 | Session | Sensor | Payload | Motion DOF | Est. duration |
 |---------|--------|---------|------------|---------------|
@@ -41,15 +57,25 @@ Sessions are ordered by modality complexity (IMU-only → 2D LiDAR → 3D LiDAR 
 | C | Livox Mid-360 | ~350 g | 3D (full) | ~8 h |
 | D | RealSense D455 | ~275 g | 3D (full) | ~8 h |
 
+<div align="justify">
+
 All sessions within YuMi payload capacity (~500 g/arm). Weight figures are estimates — **must be verified with physical scale before scheduling YuMi time.**
+
+</div>
 
 ---
 
 ## 2. Pre-Dynamic: Static Characterization
 
+<div align="justify">
+
 Static characterization does **not** require the robot arm and can be completed before any dynamic session is scheduled.
 
+</div>
+
 ### 2.1 IMU Long-Duration Static Logs
+
+<div align="justify">
 
 **Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)  
 **Duration:** 10–12 h per sensor  
@@ -65,9 +91,13 @@ All coefficients reported **numerically with units and confidence intervals**, n
 
 **Tooling:** `imu_utils` (ROS) or equivalent Allan Variance processing script.
 
+</div>
+
 ---
 
 ### 2.2 Six-Position Test (IEEE Std 1293) — IMUs
+
+<div align="justify">
 
 **Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)  
 **Timing:** Performed **before** long-duration static logs, on the same day  
@@ -76,9 +106,13 @@ All coefficients reported **numerically with units and confidence intervals**, n
 
 These parameters are **not observable** from horizontal static logs and are critical for tight-coupling IMU initialization in FAST-LIO2 and GLIM.
 
+</div>
+
 ---
 
 ### 2.3 LiDAR Static Characterization (Planar Orthogonal Residual Method)
+
+<div align="justify">
 
 **Sensors:** Livox Mid-360, RPLiDAR A2M12  
 **Setup:** Sensor fixed facing a flat wall at ~1.5–2 m distance  
@@ -91,9 +125,13 @@ Because the reference plane is fixed at t=0 and never updated, any apparent disp
 
 **Warm-up requirement (Mid-360):** The Mid-360 must be powered on for a minimum of **20 minutes** before the static characterization log begins. During this warm-up period the sensor operates normally but data is not recorded for analysis. This ensures that the internal detector temperature has reached approximate thermal steady-state, so that the static thermal model $\sigma^2_{\mathrm{static}}(T)$ captures operational conditions rather than cold-start transients. The warm-up start time and ambient temperature are logged. The same 20-minute warm-up applies to all dynamic sessions (Session C).
 
+</div>
+
 ---
 
 ### 2.4 Camera Static Characterization (RealSense D455)
+
+<div align="justify">
 
 **Setup:** RealSense D455 facing a static AprilTag board (minimum 4 tags, known geometry)  
 **Duration:** 3–4 h (must capture full thermal warm-up from cold start)  
@@ -105,9 +143,13 @@ Because the reference plane is fixed at t=0 and never updated, any apparent disp
 
 If the simulator assumes a perfect camera and the real camera shows intrinsic drift exceeding ~0.5 px (practical threshold for visual feature degradation; see Handa et al., 2014), this is a documented, quantified Reality Gap — providing direct motivation and quantified input for Phase II.
 
+</div>
+
 ---
 
 ## 3. Dynamic Sessions — Common Structure
+
+<div align="justify">
 
 Each dynamic session follows the same temporal structure, regardless of sensor type:
 
@@ -116,11 +158,17 @@ Each dynamic session follows the same temporal structure, regardless of sensor t
 Total: ~7–8 h per session
 ```
 
+</div>
+
 ### Block Structure
+
+<div align="justify">
 
 Each block lasts approximately 2 hours. To satisfy the high statistical power required by equivalence testing (TOST, see `METHODOLOGY.md` §3.4) without extending laboratory time, the YuMi will execute the trajectory in a continuous loop pattern rather than a small fixed number of repetitions.
 
 Each repetition is **[60 s static] → [trajectory execution, ~1–2 min] → [60 s static]**. For a ~1–2 min trajectory, a 2 h block yields **$n \approx 40$–60 independent repetitions** per block. The three blocks (MIX, CW, CCW) together give **$n \approx 120$–180 repetitions per trajectory type** (T1, T2, or T3); CW and CCW runs both count as repetitions of the same trajectory type for equivalence testing (M vs R). The sequence logic is:
+
+</div>
 
 | Block | Repetition pattern (continuous loop for ~2 h) |
 |-------|-----------------------------------------------|
@@ -128,12 +176,18 @@ Each repetition is **[60 s static] → [trajectory execution, ~1–2 min] → [6
 | CW | CW, CW, CW, CW... |
 | CCW | CCW, CCW, CCW, CCW... |
 
+<div align="justify">
+
 **Purpose of this design:**
 - **MIX block:** Captures alternating asymmetry and provides mixed-direction baseline.
 - **CW/CCW pure blocks:** Separate unidirectional drift accumulation for CW/CCW asymmetry analysis (H2).
 - **High n per trajectory type:** Enables TOST with high power (see [METHODOLOGY.md §3.4](METHODOLOGY.md)).
 
+</div>
+
 ### Repetition Structure
+
+<div align="justify">
 
 Each individual repetition:
 
@@ -146,7 +200,11 @@ The 60 s static periods at start and end of each repetition serve to:
 2. Provide a zero-motion reference for ground truth alignment
 3. Enable drift quantification: position/orientation error accumulated during the trajectory
 
+</div>
+
 ### Cooling Periods
+
+<div align="justify">
 
 30-minute static cooling between blocks serves two purposes:
 1. **Thermal recovery:** Allow sensor temperature to return toward ambient baseline
@@ -154,7 +212,11 @@ The 60 s static periods at start and end of each repetition serve to:
 
 During cooling periods: log IMU and LiDAR continuously (static). **Temperature $T$** should be logged (thermometer or hardware topic) throughout the session so that the M4 thermal model $\sigma^2_{\mathrm{static}}(T)$ can be fitted. This data is useful for cross-referencing with the static characterization results.
 
+</div>
+
 ### Cable Management During Dynamic Sessions
+
+<div align="justify">
 
 USB 3.0 (RealSense D455) and Ethernet (Livox Mid-360) cables must be routed along the YuMi arm using cable chain or equivalent strain-relief before each session begins. Free-hanging cables introduce variable external forces on the flange during T2/T3 trajectories that are not part of the RobotStudio kinematic model and contaminate the ground truth. This effect is documented as a known limitation and included in the ground truth uncertainty budget (see [METHODOLOGY.md §2.4](METHODOLOGY.md)).
 
@@ -164,7 +226,11 @@ USB 3.0 (RealSense D455) and Ethernet (Livox Mid-360) cables must be routed alon
 - Do not modify cable routing between blocks within the same session.
 - If cable routing changes between sessions (e.g. different sensor, different cable length), document the change explicitly.
 
+</div>
+
 ### Settling Time Verification (T3 — Aggressive Only)
+
+<div align="justify">
 
 In T3 (aggressive trajectory), inter-waypoint pauses are 2 s. Before accepting these measurements as valid ground truth comparisons, we verify that the YuMi has settled mechanically:
 
@@ -172,9 +238,13 @@ In T3 (aggressive trajectory), inter-waypoint pauses are 2 s. Before accepting t
 
 **Criterion:** Vibration amplitude at pause end < 2× noise floor of static IMU log (conservative threshold to ensure mechanical settling before ground truth comparison).
 
+</div>
+
 ---
 
 ## 4. Session A — WitMotion WT901C (3D)
+
+<div align="justify">
 
 **Working volume:** ~400×400×300 mm around YuMi end-effector center (same as Sessions B, C, D).  
 **DOF:** Full 3D  
@@ -182,13 +252,21 @@ In T3 (aggressive trajectory), inter-waypoint pauses are 2 s. Before accepting t
 
 Session A serves as the **IMU-only baseline**: it quantifies how much of the SLAM trajectory error is attributable to IMU drift alone, before adding LiDAR or visual observations. This provides a lower bound on achievable accuracy with tight-coupling (the IMU is the weakest component in any tight-coupled system).
 
+</div>
+
 ### Trajectories T1, T2, T3 (3D)
 
+<div align="justify">
+
 Same profiles as Sessions C and D (smooth spherical spiral / figure-8 with Z sinus / aggressive waypoints). IMU integration error (position and orientation drift) measured against YuMi at each trajectory end.
+
+</div>
 
 ---
 
 ## 5. Session B — RPLiDAR A2M12 (2D)
+
+<div align="justify">
 
 **Constraint:** Z position is **fixed** throughout Session B. Only yaw rotation is permitted. Roll and pitch must remain at zero to avoid violating the planar scanning assumption of 2D SLAM.
 
@@ -196,7 +274,11 @@ Same profiles as Sessions C and D (smooth spherical spiral / figure-8 with Z sin
 
 **Optional extension (separate run):** Introduce gradual Z translation to quantify the onset of 2D SLAM degradation — at what Z offset does the planar assumption fail measurably? This is a potential differentiating result for publication but is not part of the core protocol.
 
+</div>
+
 ### Trajectory T1 — Smooth (2D)
+
+<div align="justify">
 
 **Profile:** Rounded rectangle in XY plane, 300×300 mm, corners with radius ≥ 50 mm  
 **Linear velocity:** ~20 mm/s  
@@ -204,7 +286,11 @@ Same profiles as Sessions C and D (smooth spherical spiral / figure-8 with Z sin
 **Yaw:** Coupled to direction of motion (tangent following)  
 **Purpose:** Baseline — verify that simulated 2D LiDAR matches real data under minimal dynamic stress. Reference for Bias Instability extraction under gentle motion.
 
+</div>
+
 ### Trajectory T2 — Moderate (2D)
+
+<div align="justify">
 
 **Profile:** Figure-8 in XY plane, ~400×200 mm  
 **Linear velocity:** ~50 mm/s  
@@ -212,7 +298,11 @@ Same profiles as Sessions C and D (smooth spherical spiral / figure-8 with Z sin
 **Yaw:** Following tangent of the figure-8  
 **Purpose:** Introduces bidirectionality intrinsically (figure-8 crosses CW and CCW arcs within a single trajectory). Tests yaw tracking under sustained moderate angular velocity.
 
+</div>
+
 ### Trajectory T3 — Aggressive (2D)
+
+<div align="justify">
 
 **Profile:** Fixed waypoints in XY with step changes (point-to-point motion)  
 **Linear velocity:** ~100 mm/s  
@@ -221,9 +311,13 @@ Same profiles as Sessions C and D (smooth spherical spiral / figure-8 with Z sin
 **Inter-waypoint pause:** 2 s (settling verification required — see §3)  
 **Purpose:** Tests scanner response to rapid direction reversals and decoupled rotation. Maximum scan line density variation.
 
+</div>
+
 ---
 
 ## 6. Session C — Livox Mid-360 (3D)
+
+<div align="justify">
 
 **Working volume:** ~400×400×300 mm around YuMi end-effector center  
 **DOF:** Full 3D — translation in XYZ, rotation in roll, pitch, yaw  
@@ -231,7 +325,11 @@ Same profiles as Sessions C and D (smooth spherical spiral / figure-8 with Z sin
 
 The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU extrinsics. This enables tight-coupling LiDAR+IMU in FAST-LIO2 and GLIM without additional extrinsic calibration, which reduces setup and calibration effort.
 
+</div>
+
 ### Trajectory T1 — Smooth (3D)
+
+<div align="justify">
 
 **Profile:** Slow spherical spiral — the sensor traces a path that approximates uniform coverage of the working volume, analogous to a 3D Lissajous curve  
 **Linear velocity:** ~15 mm/s  
@@ -242,7 +340,11 @@ The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU e
 - Reference for Bias Instability characterization under minimal dynamics
 - Visual feature tracking without motion blur (relevant for Phase II comparison)
 
+</div>
+
 ### Trajectory T2 — Moderate (3D)
+
+<div align="justify">
 
 **Profile:** Figure-8 in XY with sinusoidal Z oscillation (~100 mm amplitude)  
 **Linear velocity:** ~40 mm/s  
@@ -255,7 +357,11 @@ The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU e
 - Optimal parallax geometry for camera (Phase II connection)
 - Moderate coupling of translational and rotational dynamics
 
+</div>
+
 ### Trajectory T3 — Aggressive (3D)
+
+<div align="justify">
 
 **Profile:** Fixed 3D waypoints with step changes (point-to-point, all axes simultaneously)  
 **Linear velocity:** ~80–100 mm/s  
@@ -269,9 +375,13 @@ The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU e
 
 **Purpose:** Maximum angular velocity stress test. Evaluates ARW accumulation under high-rate rotation, tests geometric degeneracy resistance of the Mid-360 Rosetta pattern under rapid reorientation. Also provides the primary dataset for empirical characterization of whether Mid-360 range noise statistics change under mechanical vibration and kinematic stress — a gap confirmed absent in the literature (see [RESEARCH_PLAN.md §3.2](RESEARCH_PLAN.md)).
 
+</div>
+
 ---
 
 ## 7. Session D — RealSense D455 (3D)
+
+<div align="justify">
 
 **Working volume:** Same as Session C (~400×400×300 mm)  
 **DOF:** Full 3D  
@@ -279,15 +389,25 @@ The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU e
 
 **Note on Reality Gap:** Session D is expected to show the largest Reality Gap of all sessions, because visual SLAM depends on texture richness and illumination that standard Gazebo simulation does not capture. This result is expected and publishable — it directly quantifies the limitation motivating Phase II.
 
+</div>
+
 ### Trajectories T1, T2, T3 (3D)
 
+<div align="justify">
+
 Same profile as Session C (smooth spherical spiral / figure-8 with Z sinus / aggressive waypoints) with the same velocity and angular rate parameters. Using identical trajectories across sessions enables direct cross-sensor comparison under equivalent kinematic stress.
+
+</div>
 
 ---
 
 ## 8. Controlled Environment Setup
 
+<div align="justify">
+
 The YuMi working area must be prepared to minimize uncontrolled variables that would prevent valid comparison between sessions:
+
+</div>
 
 | Variable | Requirement | Method |
 |----------|-------------|--------|
@@ -298,13 +418,19 @@ The YuMi working area must be prepared to minimize uncontrolled variables that w
 | Magnetic field | Documented | WitMotion magnetometer logs during static (cross-reference for bias); avoid metal objects being moved near sensor |
 | Cable routing | Documented, strain-relieved | Cable chain along arm; photographed before each session; free-hanging cables not permitted during T2/T3 |
 
+<div align="justify">
+
 In practical terms, access to full geometric enclosures (foam panels or a white fabric tent) may be limited in the IQS laboratory. In this work the priority is a visually controlled environment for Session D (RealSense D455) — i.e., stable illumination and simple, high-contrast patterns (AprilTag boards and mostly uniform backgrounds) that can be replicated in simulation. A more elaborate geometric enclosure for Session C (Mid-360) — for example, a complete cage of panels around the YuMi — is desirable but not required for the core metrological results; if only partial panels are available, this is documented explicitly as a limitation in the dynamic LiDAR range (≈0.4–3 m) and in the Discussion.
 
 Preferred location: If a metrology or optics laboratory with better-controlled conditions is available at IQS, it should be prioritized at least for the static characterization sessions. If not available, this is declared as an explicit limitation and documented as motivation for a controlled-environment follow-up.
 
+</div>
+
 ---
 
 ## 9. Temporal Synchronization Protocol
+
+<div align="justify">
 
 At ~100 mm/s linear velocity, a 10 ms clock offset between the YuMi IRC5 controller and the ROS PC introduces ~1 mm of artificial spatial error. This is non-negligible relative to the YuMi's path repeatability (0.10 mm) and must be explicitly addressed before any trajectory comparison is considered valid.
 
@@ -316,9 +442,13 @@ In all cases, the synchronization method used, the measured time offset, and the
 
 Reviewers are likely to flag this if it is not addressed explicitly.
 
+</div>
+
 ---
 
 ## 10. Hand-Eye Calibration Protocol
+
+<div align="justify">
 
 RobotStudio provides the pose of the mechanical flange of the YuMi. SLAM algorithms operate from the sensor's optical or inertial center. Without explicit hand-eye calibration, the ground truth comparison has a systematic offset that invalidates all error metrics.
 
@@ -335,7 +465,11 @@ Method: AX = XB calibration (Tsai-Lenz or equivalent)
 
 Hand-eye calibration must be **re-done for each session** (each sensor mounted separately). Results archived in `data/calibration/`.
 
+</div>
+
 ### Cross-Session Verification Protocol
+
+<div align="justify">
 
 Hand-eye calibration is redone per session, but microscopic mount displacement between sessions — from dismounting and remounting the sensor — cannot be fully excluded and would introduce a systematic bias not captured by repeating the AX=XB procedure.
 
@@ -347,3 +481,5 @@ Hand-eye calibration is redone per session, but microscopic mount displacement b
 4. **Acceptance criterion:** Reprojection error < 1.0 mm translation, < 0.5° rotation. If the criterion is not met, remount the sensor, redo AX=XB calibration, and repeat the verification.
 
 Results of the verification check (pass/fail, measured reprojection error) are logged in the session record and archived in `data/calibration/`. This provides a documented audit trail for reviewers assessing ground truth integrity between sessions.
+
+</div>
