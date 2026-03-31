@@ -1,9 +1,13 @@
 # Metrological Characterization of Robotic Sensor Noise Models: A TOST-Based Equivalence Framework for Simulation Validation
 
 **Institution:** IQS School of Engineering (Universitat Ramon Llull), Barcelona
+
 **Author:** Narcís Abella
+
 **Supervisor:** Dr. Antonio Gabino Salazar Martín
+
 **Status:** Design phase (pending experimental execution)
+
 **Last updated:** 2026-03-28
 
 ---
