@@ -58,9 +58,9 @@ Static characterization does **not** require the robot arm and can be completed 
 
 **Goal:** Extract Allan Variance coefficients via ADEV analysis:
 
-- ARW [°/√h] - from slope $-1/2$ of log-log ADEV curve
-- Bias Instability [°/h] - from minimum of ADEV curve
-- RRW [°/h$^{3/2}$] - from slope $+1/2$ (requires full log duration; may not be identifiable in all sensors)
+- $ARW$ [$^\circ/\sqrt{h}$] - from slope $-1/2$ of log-log ADEV curve
+- Bias Instability [$^\circ/h$] - from minimum of ADEV curve
+- $RRW$ [$^\circ/h^{3/2}$] - from slope $+1/2$ (requires full log duration; may not be identifiable in all sensors)
 
 All coefficients reported **numerically with units and confidence intervals**, not only as curves.
 
@@ -72,7 +72,7 @@ All coefficients reported **numerically with units and confidence intervals**, n
 
 **Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)
 **Timing:** Performed **before** long-duration static logs, on the same day
-**Procedure:** Place sensor in 6 static orthogonal orientations (±X, ±Y, ±Z pointing up), ~5 min per orientation
+**Procedure:** Place sensor in 6 static orthogonal orientations ($\pm X$, $\pm Y$, $\pm Z$ pointing up), ~5 min per orientation
 **Goal:** Isolate scale factor errors and gravitational bias per axis
 
 These parameters are **not observable** from horizontal static logs and are critical for tight-coupling IMU initialization in LiDAR-inertial estimators.
@@ -176,7 +176,7 @@ In T3 (aggressive trajectory), inter-waypoint pauses are 2 s. Before accepting t
 
 **Method:** During a test run, record the IMU power spectral density (PSD) during the 2 s pause. If residual vibration at the structural resonance frequency of the arm has not decayed to noise floor, the pause duration must be increased.
 
-**Criterion:** Vibration amplitude at pause end < 2× noise floor of static IMU log (conservative threshold to ensure mechanical settling before ground truth comparison).
+**Criterion:** Vibration amplitude at pause end < $2\times$ noise floor of static IMU log (conservative threshold to ensure mechanical settling before ground truth comparison).
 
 ---
 
