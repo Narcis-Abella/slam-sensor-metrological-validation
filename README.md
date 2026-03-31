@@ -132,7 +132,7 @@ Four noise model configurations are evaluated in simulation. They form a hierarc
 | M1  | Manufacturer                 | ARW, BI from datasheet; range sigma from datasheet                           | Sensor datasheets, community defaults |
 | M2  | Static Allan                 | ARW, BI, RRW from 10 to 12 h static logs                                     | Stage 1 AVAR                          |
 | M3  | In-Session Static            | ARW, BI, RRW from 60 s static windows within each dynamic session            | Stage 2 pre/post-block statics        |
-| M4  | Kinematic-Residual + Thermal | $$sigma^2(t) = f(T, v, omega, a, d-omega/dt, da/dt) fitted from YuMi residuals | Stage 2 dynamic data                  |
+| M4  | Kinematic-Residual + Thermal | $$sigma^2(t) = f(T, v, omega, a, d-omega/dt, da/dt)$$ fitted from YuMi residuals | Stage 2 dynamic data                  |
 
 Manufacturer datasheets specify noise under ideal conditions: static sensor, thermally stabilized, no mechanical load. In practice, simulation pipelines often need empirically tuned inertial noise to match operational behavior [[10]](docs/REFERENCES_CONSOLIDATED.md). Lethander & Taylor [[14]](docs/REFERENCES_CONSOLIDATED.md) support treating static AVAR as a conservative lower-bound reference for some operational conditions. M1 is retained as a baseline to quantify the gap against empirically fitted models, not as a claimed operationally sufficient model.
 
