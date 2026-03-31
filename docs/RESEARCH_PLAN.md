@@ -230,19 +230,6 @@ IMU quality ranking (reference for H1 analysis):
 
 Upon completion, this study will produce the following verifiable outputs, listed in order of methodological significance:
 
-```mermaid
-graph TD
-    ROOT["Expected Contributions and Deliverables"] --> C61["6.1 TOST equivalence framework"]
-    ROOT --> C62["6.2 Gazebo Fortress Mid-360 reference implementation"]
-    ROOT --> C63["6.3 M4 parametric noise model and coefficients"]
-    ROOT --> C64["6.4 Static characterization dataset (AVAR + six-position + thermal)"]
-    ROOT --> C65["6.5 Dynamic validation dataset"]
-    C63 --> C62
-    C64 --> C63
-    C65 --> C61
-    C65 --> C62
-```
-
 ### 6.1 Statistical Equivalence Validation Framework (TOST)
 
 The primary methodological output: a complete TOST-based pipeline for declaring metrological simulation statistically equivalent to real hardware within pre-specified, system-derived margins, applied at the sensor signal level. Includes:
