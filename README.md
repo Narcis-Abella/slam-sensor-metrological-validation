@@ -232,14 +232,18 @@ gantt
     title Project Timeline
     dateFormat  YYYY-MM-DD
     axisFormat  %b %Y
+
     section Preparation
-    Stage 1 static characterization and pilot checks :a1, 2026-03-01, 2026-05-31
-    CAD fixture printing + payload verification + delta definition/lock :a2, 2026-06-01, 2026-06-30
-    section Main Work (Sep 2026 - May 2027)
-    YuMi dynamic sessions A-D + M4 fitting + TOST analysis :a3, 2026-09-01, 2027-05-31
-    Gazebo Fortress Mid-360 plugin development/testing :a4, 2026-09-01, 2027-05-31
+    Stage 1 static + pilot checks       :a1, 2026-03-01, 2026-05-31
+    CAD fixtures · payload · delta lock :a2, 2026-06-01, 2026-06-30
+
+    section Dynamic Work
+    YuMi sessions A-D · M4 · TOST      :a3, 2026-09-01, 2027-03-31
+    Gazebo Fortress Mid-360 plugin      :a4, 2026-09-01, 2027-03-31
+
     section Closure
-    Statistical finalization + manuscript submission window :a5, 2027-04-01, 2027-06-30
+    Statistical finalization            :a5, 2027-04-01, 2027-05-31
+    Manuscript submission window        :crit, a6, 2027-05-01, 2027-06-30
 ```
 
 ---
