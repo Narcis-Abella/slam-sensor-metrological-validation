@@ -1,10 +1,10 @@
 # Research Plan
 
-**Author:** Narcís Abella
-**Supervisor:** Dr. Antonio Gabino Salazar Martín
-**Institution:** IQS School of Engineering (Universitat Ramon Llull), Barcelona
-**Version:** 0.6 (pending supervisor review)
-**Date:** 2026-03-28
+* **Author:** Narcís Abella
+* **Supervisor:** Dr. Antonio Gabino Salazar Martín
+* **Institution:** IQS School of Engineering (Universitat Ramon Llull), Barcelona
+* **Version:** 0.6 (pending supervisor review)
+* **Date:** 2026-03-28
 
 ---
 
