@@ -1,8 +1,8 @@
 # References - Consolidated
 
-**Version:** 1.0
-**Date:** 2026-03-28
-**Status:** Single source of truth - supersedes RESEARCH_PLAN.md §9, REFERENCES_POOL.md, and EXTENDED_LITERATURE_REVIEW.md
+* **Version:** 0.6
+* **Date:** 2026-03-31
+* **Status:** Single source of truth - supersedes RESEARCH_PLAN.md §9, REFERENCES_POOL.md, and EXTENDED_LITERATURE_REVIEW.md
 
 **Sources merged:**
 
