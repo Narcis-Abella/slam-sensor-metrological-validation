@@ -1,8 +1,8 @@
 # Experimental Design
 
-**Version:** 0.6
-**Date:** 2026-03-31
-**Status:** Pending supervisor review and payload weight confirmation (physical scale)
+* **Version:** 0.6
+* **Date:** 2026-03-31
+* **Status:** Pending supervisor review and payload weight confirmation (physical scale)
 
 ---
 
