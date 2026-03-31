@@ -1,7 +1,7 @@
 # Methodology
 
 * **Version:** 0.6
-* **Date:** 2026-03-28
+* **Date:** 2026-03-31
 * **Status:** Pending supervisor review
 
 ---
