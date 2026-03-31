@@ -96,22 +96,21 @@ Four sessions, one sensor configuration per session.
 
 **Session structure (identical across A-D):**
 
-1. 60 s static (AVAR baseline + thermal state reference)
-2. Block MIX: CW/CCW/CW alternating
-3. Cooldown
-4. Block CW
-5. Cooldown
-6. Block CCW
-7. 60 s static (thermal state at end)
-
 ```mermaid
 flowchart LR
-    S0["60 s static<br/>(AVAR baseline)"] --> MIX["Block MIX<br/>(CW/CCW/CW alternating)"]
-    MIX --> C1["Cooldown"]
-    C1 --> CW["Block CW"]
-    CW --> C2["Cooldown"]
-    C2 --> CCW["Block CCW"]
-    CCW --> S1["60 s static<br/>(thermal state end)"]
+    classDef static   fill:#D3D1C7,stroke:#5F5E5A,color:#2C2C2A
+    classDef traj     fill:#CECBF6,stroke:#534AB7,color:#26215C
+    classDef cooldown fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+
+    S0["60 s static\n(AVAR baseline)"]:::static
+    MIX["Block MIX\n(CW/CCW/CW)"]:::traj
+    C1["Cooldown"]:::cooldown
+    CW["Block CW"]:::traj
+    C2["Cooldown"]:::cooldown
+    CCW["Block CCW"]:::traj
+    S1["60 s static\n(thermal end)"]:::static
+
+    S0 --> MIX --> C1 --> CW --> C2 --> CCW --> S1
 ```
 
 Three trajectory profiles per session are used: T1 (smooth), T2 (moderate), and T3 (aggressive). Canonical session-specific nominal velocity and angular-rate values are defined in [docs/EXPERIMENTAL_DESIGN.md](docs/EXPERIMENTAL_DESIGN.md). The TOST primary endpoint uses T2. T3 is held out as the generalization check for M4.
