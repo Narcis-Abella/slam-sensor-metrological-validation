@@ -61,9 +61,9 @@ Static characterization does **not** require the robot arm and can be completed 
 
  **Goal:** Extract Allan Variance coefficients via ADEV analysis:
 
-- $ARW$ [$^\circ/\sqrt{h}$] - from slope $-1/2$ of log-log ADEV curve
-- Bias Instability [$^\circ/h$] - from minimum of ADEV curve
-- $RRW$ [$^\circ/h^{3/2}$] - from slope $+1/2$ (requires full log duration; may not be identifiable in all sensors)
+- $ARW$ ($^\circ/\sqrt{h}$) - from slope $-1/2$ of log-log ADEV curve
+- Bias Instability ($^\circ/h$) - from minimum of ADEV curve
+- $RRW$ ($^\circ/h^{3/2}$) - from slope $+1/2$ (requires full log duration; may not be identifiable in all sensors)
 
 All coefficients reported **numerically with units and confidence intervals**, not only as curves.
 
