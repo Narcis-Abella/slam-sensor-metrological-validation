@@ -127,6 +127,7 @@ Interpretation: Residual differences between conditions (real vs. simulated unde
 ## 3. Statistical Test Design
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables': {'lineColor':'#5F5E5A','fontFamily':'Arial'}}}%%
 flowchart TD
     classDef data     fill:#B5D4F4,stroke:#185FA5,color:#042C53
     classDef test     fill:#D3D1C7,stroke:#5F5E5A,color:#2C2C2A

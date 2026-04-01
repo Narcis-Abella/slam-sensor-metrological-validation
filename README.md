@@ -97,6 +97,7 @@ Four sessions, one sensor configuration per session.
 **Session structure (identical across A-D):**
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables': {'lineColor':'#5F5E5A','fontFamily':'Arial'}}}%%
 flowchart LR
     classDef static   fill:#D3D1C7,stroke:#5F5E5A,color:#2C2C2A
     classDef traj     fill:#CECBF6,stroke:#534AB7,color:#26215C
@@ -228,6 +229,7 @@ The plugin will be released as a standalone open-source GitHub repository before
 ## 8. Timeline
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables': {'lineColor':'#5F5E5A','fontFamily':'Arial'}}}%%
 gantt
     title Project Timeline
     dateFormat  YYYY-MM-DD

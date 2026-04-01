@@ -51,15 +51,11 @@ Static characterization does **not** require the robot arm and can be completed 
 
 ### 2.1 IMU Long-Duration Static Logs
 
-**Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)
-
-**Duration:** 10–12 h per sensor
-
-**Conditions:** Sensor completely immobile, mounted on anti-vibration surface
-
-**Temperature:** Logged every 1 h (calibrated thermometer next to sensor)
-
- **Goal:** Extract Allan Variance coefficients via ADEV analysis:
+* **Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)
+* **Duration:** 10–12 h per sensor
+* **Conditions:** Sensor completely immobile, mounted on anti-vibration surface
+* **Temperature:** Logged every 1 h (calibrated thermometer next to sensor)
+* **Goal:** Extract Allan Variance coefficients via ADEV analysis:
 
 - $ARW$ ($^\circ/\sqrt{h}$) - from slope $-1/2$ of log-log ADEV curve
 - Bias Instability ($^\circ/h$) - from minimum of ADEV curve
@@ -67,19 +63,16 @@ Static characterization does **not** require the robot arm and can be completed 
 
 All coefficients reported **numerically with units and confidence intervals**, not only as curves.
 
-**Tooling:** `imu_utils` (ROS) or equivalent Allan Variance processing script.
+* **Tooling:** `imu_utils` (ROS) or equivalent Allan Variance processing script.
 
 ---
 
 ### 2.2 Six-Position Test (IEEE Std 1293) - IMUs
 
-**Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)
-
-**Timing:** Performed **before** long-duration static logs, on the same day
-
-**Procedure:** Place sensor in 6 static orthogonal orientations ($\pm X$, $\pm Y$, $\pm Z$ pointing up), ~5 min per orientation
-
-**Goal:** Isolate scale factor errors and gravitational bias per axis
+* **Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)
+* **Timing:** Performed **before** long-duration static logs, on the same day
+* **Procedure:** Place sensor in 6 static orthogonal orientations ($\pm X$, $\pm Y$, $\pm Z$ pointing up), ~5 min per orientation
+* **Goal:** Isolate scale factor errors and gravitational bias per axis
 
 These parameters are **not observable** from horizontal static logs and are critical for tight-coupling IMU initialization in LiDAR-inertial estimators.
 
@@ -87,31 +80,25 @@ These parameters are **not observable** from horizontal static logs and are crit
 
 ### 2.3 LiDAR Static Characterization (Planar Orthogonal Residual Method)
 
-**Sensors:** Livox Mid-360, RPLiDAR A2M12
-
-**Setup:** Sensor fixed facing a flat wall at ~1.5–2 m distance
-
-**Duration:** 3–4 h (sufficient to capture thermal stabilization)
-
-**Method:** Fit a reference plane to the point cloud at t=0. For each subsequent frame, compute the mean and standard deviation of orthogonal distances from all points to the reference plane.
+* **Sensors:** Livox Mid-360, RPLiDAR A2M12
+* **Setup:** Sensor fixed facing a flat wall at ~1.5–2 m distance
+* **Duration:** 3–4 h (sufficient to capture thermal stabilization)
+* **Method:** Fit a reference plane to the point cloud at t=0. For each subsequent frame, compute the mean and standard deviation of orthogonal distances from all points to the reference plane.
 
 Because the reference plane is fixed at t=0 and never updated, any apparent displacement in later frames is attributable to the sensor's thermal ToF drift, not to registration errors between frames. There is no ICP matching involved.
 
 **Do not** measure absolute distances. The goal is temporal variation, not calibration of the range measurement.
 
-**Warm-up requirement (Mid-360):** The Mid-360 must be powered on for a minimum of **20 minutes** before the static characterization log begins. During this warm-up period the sensor operates normally but data is not recorded for analysis. This ensures that the internal detector temperature has reached approximate thermal steady-state, so that the static thermal model $\sigma^2_{\mathrm{static}}(T)$ captures operational conditions rather than cold-start transients. The warm-up start time and ambient temperature are logged. The same 20-minute warm-up applies to all dynamic sessions (Session C).
+* **Warm-up requirement (Mid-360):** The Mid-360 must be powered on for a minimum of **20 minutes** before the static characterization log begins. During this warm-up period the sensor operates normally but data is not recorded for analysis. This ensures that the internal detector temperature has reached approximate thermal steady-state, so that the static thermal model $\sigma^2_{\mathrm{static}}(T)$ captures operational conditions rather than cold-start transients. The warm-up start time and ambient temperature are logged. The same 20-minute warm-up applies to all dynamic sessions (Session C).
 
 ---
 
 ### 2.4 Camera Static Characterization (RealSense D455)
 
-**Setup:** RealSense D455 facing a static AprilTag board (minimum 4 tags, known geometry)
-
-**Duration:** 3–4 h (must capture full thermal warm-up from cold start)
-
-**Logging:** 6-DOF pose estimation of the AprilTag board at 1 Hz
-
-**Goal:** Quantify:
+* **Setup:** RealSense D455 facing a static AprilTag board (minimum 4 tags, known geometry)
+* **Duration:** 3–4 h (must capture full thermal warm-up from cold start)
+* **Logging:** 6-DOF pose estimation of the AprilTag board at 1 Hz
+* **Goal:** Quantify:
 
 - **Fixed-Pattern Noise (FPN)** variation in the infrared projector depth image
 - **Thermal intrinsic drift:** apparent translation/rotation of the static board over time (proxy for focal length / principal point drift)
@@ -126,17 +113,16 @@ Each dynamic session follows the same temporal structure, regardless of sensor t
 
 ```mermaid
 flowchart LR
-    S0["60 s static"] --> MIX["Block MIX (~2 h)"]
-    MIX --> C1["30 min cooling"]
-    C1 --> CW["Block CW (~2 h)"]
-    CW --> C2["30 min cooling"]
-    C2 --> CCW["Block CCW (~2 h)"]
-    CCW --> S1["60 s static"]
-```
+    classDef static   fill:#D3D1C7,stroke:#5F5E5A,color:#2C2C2A
+    classDef traj     fill:#CECBF6,stroke:#534AB7,color:#26215C
+    classDef cooldown fill:#9FE1CB,stroke:#0F6E56,color:#04342C
 
-```text
-[60s static] → [Block MIX ~2h] → [30min cooling] → [Block CW ~2h] → [30min cooling] → [Block CCW ~2h] → [60s static]
-Total: ~7–8 h per session
+    S0["60 s static"]:::static --> MIX["Block MIX (~2 h)"]:::traj
+    MIX --> C1["30 min cooling"]:::cooldown
+    C1 --> CW["Block CW (~2 h)"]:::traj
+    CW --> C2["30 min cooling"]:::cooldown
+    C2 --> CCW["Block CCW (~2 h)"]:::traj
+    CCW --> S1["60 s static"]:::static
 ```
 
 ### Block Structure
@@ -147,12 +133,16 @@ Each repetition is **[60 s static] → [trajectory execution, ~1–2 min] → [6
 
 ```mermaid
 flowchart TD
-    SESSION["Session (A/B/C/D)"] --> BLOCKS["Blocks: MIX / CW / CCW"]
-    BLOCKS --> LOOP["Continuous loop during ~2 h block"]
-    LOOP --> REP["Repetition"]
-    REP --> PRE["60 s static (pre)"]
-    PRE --> TRAJ["Trajectory (~1–2 min)"]
-    TRAJ --> POST["60 s static (post)"]
+    classDef session  fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    classDef traj     fill:#CECBF6,stroke:#534AB7,color:#26215C
+    classDef static   fill:#D3D1C7,stroke:#5F5E5A,color:#2C2C2A
+
+    SESSION["Session (A/B/C/D)"]:::session --> BLOCKS["Blocks: MIX / CW / CCW"]:::traj
+    BLOCKS --> LOOP["Continuous loop during ~2 h block"]:::traj
+    LOOP --> REP["Repetition"]:::session
+    REP --> PRE["60 s static (pre)"]:::static
+    PRE --> TRAJ["Trajectory (~1–2 min)"]:::traj
+    TRAJ --> POST["60 s static (post)"]:::static
     POST --> REP
 ```
 
@@ -169,12 +159,6 @@ flowchart TD
 - **High n per trajectory type:** Enables TOST with high power (see [METHODOLOGY.md §3.4](METHODOLOGY.md)).
 
 ### Repetition Structure
-
-Each individual repetition:
-
-```text
-[60s static: IMU bias reference] → [trajectory execution] → [60s static: drift measurement]
-```
 
 The 60 s static periods at start and end of each repetition serve to:
 
@@ -206,19 +190,16 @@ USB 3.0 (RealSense D455) and Ethernet (Livox Mid-360) cables must be routed alon
 
 In T3 (aggressive trajectory), inter-waypoint pauses are 2 s. Before accepting these measurements as valid ground truth comparisons, we verify that the YuMi has settled mechanically:
 
-**Method:** During a test run, record the IMU power spectral density (PSD) during the 2 s pause. If residual vibration at the structural resonance frequency of the arm has not decayed to noise floor, the pause duration must be increased.
-
-**Criterion:** Vibration amplitude at pause end < $2\times$ noise floor of static IMU log (conservative threshold to ensure mechanical settling before ground truth comparison).
+* **Method:** During a test run, record the IMU power spectral density (PSD) during the 2 s pause. If residual vibration at the structural resonance frequency of the arm has not decayed to noise floor, the pause duration must be increased.
+* **Criterion:** Vibration amplitude at pause end < $2\times$ noise floor of static IMU log (conservative threshold to ensure mechanical settling before ground truth comparison).
 
 ---
 
 ## 4. Session A: WitMotion WT901C (3D)
 
-**Working volume:** ~400×400×300 mm around YuMi end-effector center (same as Sessions B, C, D).
-
-**DOF:** Full 3D
-
-**Role:** IMU-only session: no LiDAR or camera. Pure inertial estimation evaluated against YuMi ground truth.
+* **Working volume:** ~400×400×300 mm around YuMi end-effector center (same as Sessions B, C, D).
+* **DOF:** Full 3D
+* **Role:** IMU-only session: no LiDAR or camera. Pure inertial estimation evaluated against YuMi ground truth.
 
 Session A serves as the **IMU-only baseline**: it quantifies how much of the sensor system residual error is attributable to IMU drift alone, before adding LiDAR or visual observations. This provides a lower bound on achievable accuracy with tight-coupling (the IMU is the weakest component in any tight-coupled system).
 
@@ -230,58 +211,52 @@ Same profiles as Sessions C and D (smooth spherical spiral / figure-8 with Z sin
 
 ## 5. Session B: RPLiDAR A2M12 (2D)
 
-**Constraint:** Z position is **fixed** throughout Session B. Only yaw rotation is permitted. Roll and pitch must remain at zero to avoid violating the planar scanning assumption of 2D LiDAR.
-
-**Working area:** XY plane, ~400×400 mm around the YuMi base reference.
-
-**Optional extension (separate run):** Introduce gradual Z translation to quantify the onset of planar LiDAR performance degradation: at what Z offset does the planarity assumption fail measurably? This is a potential differentiating result for publication but is not part of the core protocol.
+* **Constraint:** Z position is **fixed** throughout Session B. Only yaw rotation is permitted. Roll and pitch must remain at zero to avoid violating the planar scanning assumption of 2D LiDAR.
+* **Working area:** XY plane, ~400×400 mm around the YuMi base reference.
+* **Optional extension (separate run):** Introduce gradual Z translation to quantify the onset of planar LiDAR performance degradation: at what Z offset does the planarity assumption fail measurably? This is a potential differentiating result for publication but is not part of the core protocol.
 
 ### Trajectory T1: Smooth (2D)
 
-**Profile:** Rounded rectangle in XY plane, 300×300 mm, corners with radius ≥ 50 mm
-
-**Linear velocity:** ~20 mm/s
-
-**Angular velocity (yaw):** ~5°/s
-
-**Yaw:** Coupled to direction of motion (tangent following)
-
-**Purpose:** Baseline - verify that simulated 2D LiDAR matches real data under minimal dynamic stress. Reference for Bias Instability extraction under gentle motion.
+* **Profile:** Rounded rectangle in XY plane, 300×300 mm, corners with radius ≥ 50 mm
+* **Linear velocity:** ~20 mm/s
+* **Angular velocity (yaw):** ~5°/s
+* **Yaw:** Coupled to direction of motion (tangent following)
+* **Purpose:** Baseline - verify that simulated 2D LiDAR matches real data under minimal dynamic stress. Reference for Bias Instability extraction under gentle motion.
 
 ### Trajectory T2: Moderate (2D)
 
-**Profile:** Figure-8 in XY plane, ~400×200 mm
-**Linear velocity:** ~50 mm/s
-**Angular velocity (yaw):** ~20°/s
-**Yaw:** Following tangent of the figure-8
-**Purpose:** Introduces bidirectionality intrinsically (figure-8 crosses CW and CCW arcs within a single trajectory). Tests yaw tracking under sustained moderate angular velocity.
+* **Profile:** Figure-8 in XY plane, ~400×200 mm
+* **Linear velocity:** ~50 mm/s
+* **Angular velocity (yaw):** ~20°/s
+* **Yaw:** Following tangent of the figure-8
+* **Purpose:** Introduces bidirectionality intrinsically (figure-8 crosses CW and CCW arcs within a single trajectory). Tests yaw tracking under sustained moderate angular velocity.
 
 ### Trajectory T3: Aggressive (2D)
 
-**Profile:** Fixed waypoints in XY with step changes (point-to-point motion)
-**Linear velocity:** ~100 mm/s
-**Angular velocity (yaw):** ~45°/s
-**Yaw:** Decoupled from translation (sensor pointed at arbitrary orientations independent of motion direction)
-**Inter-waypoint pause:** 2 s (settling verification required: see §3)
-**Purpose:** Tests scanner response to rapid direction reversals and decoupled rotation. Maximum scan line density variation.
+* **Profile:** Fixed waypoints in XY with step changes (point-to-point motion)
+* **Linear velocity:** ~100 mm/s
+* **Angular velocity (yaw):** ~45°/s
+* **Yaw:** Decoupled from translation (sensor pointed at arbitrary orientations independent of motion direction)
+* **Inter-waypoint pause:** 2 s (settling verification required: see §3)
+* **Purpose:** Tests scanner response to rapid direction reversals and decoupled rotation. Maximum scan line density variation.
 
 ---
 
 ## 6. Session C: Livox Mid-360 (3D)
 
-**Working volume:** ~400×400×300 mm around YuMi end-effector center
-**DOF:** Full 3D (translation in XYZ, rotation in roll, pitch, yaw)
-**Warm-up:** Minimum 20 minutes powered-on before session start (see §2.3).
+* **Working volume:** ~400×400×300 mm around YuMi end-effector center
+* **DOF:** Full 3D (translation in XYZ, rotation in roll, pitch, yaw)
+* **Warm-up:** Minimum 20 minutes powered-on before session start (see §2.3).
 
 The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU extrinsics. This enables tight-coupling LiDAR+IMU in downstream estimators without additional extrinsic calibration, which reduces setup and calibration effort.
 
 ### Trajectory T1: Smooth (3D)
 
-**Profile:** Slow spherical spiral - the sensor traces a path that approximates uniform coverage of the working volume, analogous to a 3D Lissajous curve
-**Linear velocity:** ~15 mm/s
-**Angular velocity:** ~5°/s all axes
-**Orientation:** Coupled - sensor approximately pointing toward working volume center
-**Purpose:**
+* **Profile:** Slow spherical spiral - the sensor traces a path that approximates uniform coverage of the working volume, analogous to a 3D Lissajous curve
+* **Linear velocity:** ~15 mm/s
+* **Angular velocity:** ~5°/s all axes
+* **Orientation:** Coupled - sensor approximately pointing toward working volume center
+* **Purpose:**
 
 - Full Rosetta pattern integration: at low speed, the Mid-360 accumulates near-complete spherical coverage per revolution
 - Reference for Bias Instability characterization under minimal dynamics
@@ -289,13 +264,13 @@ The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU e
 
 ### Trajectory T2: Moderate (3D)
 
-**Profile:** Figure-8 in XY with sinusoidal Z oscillation (~100 mm amplitude)
-**Linear velocity:** ~40 mm/s
-**Angular velocity:** ~20–30°/s
-**Yaw:** Following XY tangent
-**Pitch:** Sinusoidal, synchronized with Z (~±15°)
-**Roll:** Constant
-**Purpose:**
+* **Profile:** Figure-8 in XY with sinusoidal Z oscillation (~100 mm amplitude)
+* **Linear velocity:** ~40 mm/s
+* **Angular velocity:** ~20–30°/s
+* **Yaw:** Following XY tangent
+* **Pitch:** Sinusoidal, synchronized with Z (~±15°)
+* **Roll:** Constant
+* **Purpose:**
 
 - Varying incidence angles on surrounding surfaces (LiDAR range accuracy as function of angle)
 - Optimal parallax geometry for camera
@@ -303,28 +278,28 @@ The Mid-360's internal IMU (ICM40609, 200 Hz) has factory-calibrated LiDAR-IMU e
 
 ### Trajectory T3: Aggressive (3D)
 
-**Profile:** Fixed 3D waypoints with step changes (point-to-point, all axes simultaneously)
-**Linear velocity:** ~80–100 mm/s
-**Angular velocity:** ~60–80°/s in roll, pitch, and yaw simultaneously
-**Rotation:** Fully decoupled from translation
-**Inter-waypoint pause:** 2 s (settling verification required)
+* **Profile:** Fixed 3D waypoints with step changes (point-to-point, all axes simultaneously)
+* **Linear velocity:** ~80–100 mm/s
+* **Angular velocity:** ~60–80°/s in roll, pitch, and yaw simultaneously
+* **Rotation:** Fully decoupled from translation
+* **Inter-waypoint pause:** 2 s (settling verification required)
 
-**Waypoint strategy options (to be decided with supervisor):**
+* **Waypoint strategy options (to be decided with supervisor):**
 
 - *Option A (fixed set):* Predefined waypoints covering the working volume. Fully reproducible but limited coverage.
 - *Option B (pseudo-random with fixed seed):* Random waypoints generated from a fixed RNG seed. Broader coverage of motion space while maintaining reproducibility across sessions.
 
-**Purpose:** Maximum angular velocity stress test. Evaluates ARW accumulation under high-rate rotation, tests geometric degeneracy resistance of the Mid-360 Rosetta pattern under rapid reorientation. Also provides the primary dataset for empirical characterization of whether Mid-360 range-noise statistics change under controlled kinematic stress, where direct prior evidence remains limited (see [RESEARCH_PLAN.md §3.2](RESEARCH_PLAN.md)).
+* **Purpose:** Maximum angular velocity stress test. Evaluates ARW accumulation under high-rate rotation, tests geometric degeneracy resistance of the Mid-360 Rosetta pattern under rapid reorientation. Also provides the primary dataset for empirical characterization of whether Mid-360 range-noise statistics change under controlled kinematic stress, where direct prior evidence remains limited (see [RESEARCH_PLAN.md §3.2](RESEARCH_PLAN.md)).
 
 ---
 
 ## 7. Session D: RealSense D455 (3D)
 
-**Working volume:** Same as Session C (~400×400×300 mm)
-**DOF:** Full 3D
-**Additional dependency:** Illumination conditions must be documented and controlled (LED stable lighting, no sunlight variation). Camera performance is directly illumination-dependent; Gazebo cannot faithfully replicate this without photorealistic rendering.
+* **Working volume:** Same as Session C (~400×400×300 mm)
+* **DOF:** Full 3D
+* **Additional dependency:** Illumination conditions must be documented and controlled (LED stable lighting, no sunlight variation). Camera performance is directly illumination-dependent; Gazebo cannot faithfully replicate this without photorealistic rendering.
 
-**Note on sim-to-real gap:** Session D is expected to show the largest sensor-level sim-to-real gap of all sessions, because camera depth sensing depends on texture richness and illumination that standard Gazebo simulation does not capture. This result is expected and publishable: it directly quantifies this limitation for visual sensing.
+* **Note on sim-to-real gap:** Session D is expected to show the largest sensor-level sim-to-real gap of all sessions, because camera depth sensing depends on texture richness and illumination that standard Gazebo simulation does not capture. This result is expected and publishable: it directly quantifies this limitation for visual sensing.
 
 ### Trajectories T1, T2, T3 (3D)
 
@@ -371,17 +346,22 @@ RobotStudio provides the pose of the YuMi mechanical flange. Sensor residual com
 
 ```mermaid
 flowchart TD
-    A["Mount and lock fixture"] --> B["Import CAD in RobotStudio and define nominal frame"]
-    B --> C["Contact probing on predefined points/planes"]
-    C --> D["Fit CAD-to-lab rigid transform"]
-    D --> E{"Acceptance criteria met?<br/>Probe RMS <= 0.20 mm<br/>Fit RMS <= 0.50 mm"}
+    classDef process  fill:#B5D4F4,stroke:#185FA5,color:#042C53
+    classDef decision fill:#FAC775,stroke:#854F0B,color:#412402
+    classDef pass     fill:#C0DD97,stroke:#3B6D11,color:#173404
+    classDef fail     fill:#F7C1C1,stroke:#A32D2D,color:#501313
+
+    A["Mount and lock fixture"]:::process --> B["Import CAD in RobotStudio and define nominal frame"]:::process
+    B --> C["Contact probing on predefined points/planes"]:::process
+    C --> D["Fit CAD-to-lab rigid transform"]:::process
+    D --> E{"Acceptance criteria met?<br/>Probe RMS <= 0.20 mm<br/>Fit RMS <= 0.50 mm"}:::decision
     E -- "No" --> C
-    E -- "Yes" --> F["Store corrected session frame"]
-    F --> G["Session-start verification probing subset"]
-    G --> H{"Verification drift <= 0.50 mm<br/>and <= 0.30 deg?"}
+    E -- "Yes" --> F["Store corrected session frame"]:::pass
+    F --> G["Session-start verification probing subset"]:::process
+    G --> H{"Verification drift <= 0.50 mm<br/>and <= 0.30 deg?"}:::decision
     H -- "No" --> A
-    H -- "Yes" --> I["Compute residuals in corrected frame"]
-    I --> J["Archive raw points, transform, residual report, pass/fail"]
+    H -- "Yes" --> I["Compute residuals in corrected frame"]:::pass
+    I --> J["Archive raw points, transform, residual report, pass/fail"]:::process
 ```
 
 ### 10.1 Active Geometric Reference Workflow
@@ -392,14 +372,7 @@ flowchart TD
 2. A set of geometric primitives used as references (planes, edges, and corner control points)
 3. A contact probe routine executed by the robot to identify actual fixture geometry in the lab frame
 
-**Procedure:**
-
-1. Mount and lock the fixture in the designated workstation location.
-2. Import the fixture CAD model into RobotStudio and define the nominal fixture coordinate frame.
-3. Execute contact probing on predefined control points and planes on the fixture.
-4. Fit the rigid transform from CAD frame to measured lab frame using the contact points.
-5. Store the corrected fixture frame as the geometric reference for that session.
-6. Compute sensor residuals against this corrected fixture frame during analysis.
+The full step-by-step sequence is shown in the Mermaid flowchart above; Sections 10.2 and 10.3 define acceptance criteria and session-level verification.
 
 ### 10.2 Measurement and Acceptance Criteria
 
