@@ -139,11 +139,10 @@ flowchart TD
 
     SESSION["Session (A/B/C/D)"]:::session --> BLOCKS["Blocks: MIX / CW / CCW"]:::traj
     BLOCKS --> LOOP["Continuous loop during ~2 h block"]:::traj
-    LOOP --> REP["Repetition"]:::session
-    REP --> PRE["60 s static (pre)"]:::static
+    LOOP --> PRE["60 s static"]:::static
     PRE --> TRAJ["Trajectory (~1–2 min)"]:::traj
-    TRAJ --> POST["60 s static (post)"]:::static
-    POST --> REP
+    TRAJ --> REP["Repetition"]:::session
+    REP --> PRE
 ```
 
 | Block | Repetition pattern (continuous loop for ~2 h) |
