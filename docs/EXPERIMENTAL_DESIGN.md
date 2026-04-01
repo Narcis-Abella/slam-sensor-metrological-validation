@@ -51,12 +51,15 @@ Static characterization does **not** require the robot arm and can be completed 
 
 ### 2.1 IMU Long-Duration Static Logs
 
-* **Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)
-* **Duration:** 10–12 h per sensor
-* **Conditions:** Sensor completely immobile, mounted on anti-vibration surface
-* **Temperature:** Logged every 1 h (calibrated thermometer next to sensor)
+**Sensors:** WitMotion WT901C, RealSense D455 (IMU), Livox Mid-360 (internal IMU)
 
-* **Goal:** Extract Allan Variance coefficients via ADEV analysis:
+**Duration:** 10–12 h per sensor
+
+**Conditions:** Sensor completely immobile, mounted on anti-vibration surface
+
+**Temperature:** Logged every 1 h (calibrated thermometer next to sensor)
+
+ **Goal:** Extract Allan Variance coefficients via ADEV analysis:
 
 - $ARW$ [$^\circ/\sqrt{h}$] - from slope $-1/2$ of log-log ADEV curve
 - Bias Instability [$^\circ/h$] - from minimum of ADEV curve
